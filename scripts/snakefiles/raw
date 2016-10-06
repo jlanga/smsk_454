@@ -1,0 +1,63 @@
+rule raw_make_link_sff_sample:
+    """
+    Create links from original file to other one in data/sff/{sample_name}.sff
+    """
+    input:
+        sff = lambda wildcards: config["samples"][wildcards.sample]["sff"]
+    output:
+        sff = protected(raw_dir + "{sample}.sff")
+    log:
+        raw_doc + "make_link_sff_{sample}.log"
+    benchmark:
+        raw_doc + "make_link_sff_{sample}.json"
+    shell:
+        "ln --symbolic "
+            "$(readlink --canonicalize {input.sff} "
+            "{output.sff}) "
+        "2> {log}"
+
+
+
+
+rule raw_make_link_adaptors:
+    """
+    Create link to from the original adaptor file to data/adaptors/adaptors.fa
+    """
+    input:
+        fa = config["adaptors"]
+    output:
+        fa = protected(raw_dir + "adaptors.fa")
+    threads:
+        1
+    log:
+        raw_doc + "make_link_adaptors.log"
+    benchmark:
+        raw_doc + "make_link_adaptors.json"
+    shell:
+        "ln --symbolic "
+            "$(readlink --canonicalize {input.fa}) "
+            "{output.fa} "
+        "2> {log}"
+
+
+
+rule raw_download_univec:
+    """
+    Download Univec from NCBI
+    """
+    output:
+        fa = protected(raw_dir + "univec.fa")
+    threads:
+        1
+    params:
+        univec_url = config["univec_url"]
+    log:
+        raw_doc + "download_univec.log"
+    benchmark:
+        raw_doc + "download_univec.json"
+    shell:
+        "wget "
+            "--continue "
+            "--output-document {output.fa} "
+            "{params.univec_url} "
+        "2> {log}"

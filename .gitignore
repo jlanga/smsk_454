@@ -1,0 +1,5 @@
+.linuxbrew/
+.snakemake/
+results/
+doc/
+src/

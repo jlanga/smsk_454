@@ -1,0 +1,8 @@
+raw_dir = "results/raw/"
+raw_doc = "doc/raw/"
+
+qc_dir = "results/qc/"
+qc_doc = "doc/qc/"
+
+assembly_dir = "results/assembly/"
+assembly_doc = "doc/assembly/"

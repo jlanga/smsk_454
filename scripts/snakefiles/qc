@@ -1,0 +1,203 @@
+rule qc_pyrobayes_sample:
+    """
+    Perform base calling with Pyrobayes
+    """
+    input:
+        sff   = raw_dir + "{sample}.sff"
+    output:
+        fasta = temp(qc_dir + "{sample}.pyrobayes.fasta"),
+        qual  = temp(qc_dir + "{sample}.pyrobayes.fasta.qual")
+    params:
+        stub  = qc_dir + "{sample}.pyrobayes",
+    log:
+        qc_doc + "pyrobayes_{sample}.log"
+    benchmark:
+        qc_doc + "pyrobayes_{sample}.json"
+    threads:
+        1
+    shell:
+        "./src/UnifiedRelease/bin/PyroBayes "
+            "--sffFile {input.sff} "
+            "--outStub {params.stub} "
+        "2> {log} 1>&2"
+
+
+
+rule qc_join_fasta_qual_sample:
+    input:
+        fasta = qc_dir + "{sample}.pyrobayes.fasta",
+        qual  = qc_dir + "{sample}.pyrobayes.fasta.qual"
+    output:
+        fastq_gz = protected(qc_dir + "{sample}.pyrobayes.fq.gz")
+    threads:
+        4
+    log:
+        qc_doc + "join_fasta_qual_{sample}.log"
+    benchmark:
+        qc_doc + "join_fasta_qual_{sample}.json"
+    shell:
+        "( python3 scripts/fasta_qual_to_fastq.py "
+            "{input.fasta} "
+            "{input.qual} | "
+        "pigz --best > {output.fastq_gz} ) "
+        "2> {log} 2>&1"
+
+
+
+rule qc_trimmomatic_sample:
+    """
+    Perform a mild trimmomatic run
+    """
+    input:
+        fq_gz = qc_dir + "{sample}.pyrobayes.fq.gz"
+    output:
+        fq_gz = qc_dir + "{sample}.trimmomatic.fq.gz"
+    params:
+        trimmomatic = config["software_params"]["trimmomatic"]
+    threads:
+        4
+    log:
+        qc_doc + "trimmomatic_{sample}.log"
+    benchmark:
+        qc_doc + "trimmomatic_{sample}.json"
+    shell:
+        "trimmomatic SE "
+            "-phred64 "
+            "<(pigz --decompress --stdout {input.fq_gz}) "
+            ">(pigz --best > {output.fq_gz}) "
+            "{params.trimmomatic} "
+        "2> {log} 1>&2"
+
+
+
+
+rule qc_fastq_to_fasta_sample:
+    """
+    Convert fastq to fasta (for seqclean).
+    """
+    input:
+        fq_gz = qc_dir + "{sample}.trimmomatic.fq.gz"
+    output:
+        fasta = temp(qc_dir + "{sample}.trimmomatic.fa")
+    threads:
+        1
+    log:
+        qc_doc + "fastq_to_fasta_{sample}.log"
+    benchmark:
+        qc_doc + "fastq_to_fasta_{sample}.json"
+    shell:
+        "( pigz --decompress --stdout {input.fq_gz} | "
+        "python3 scripts/fastq_to_fasta.py "
+        "> {output.fasta} ) "
+        "2> {log} 1>&2"
+
+
+
+
+rule qc_fastq_to_qual_sample:
+    """
+    Convert fastq to qual (for cln2qual).
+    """
+    input:
+        fq_gz = qc_dir + "{sample}.trimmomatic.fq.gz"
+    output:
+        qual = temp(qc_dir + "{sample}.trimmomatic.qual")
+    threads:
+        1
+    log:
+        qc_doc + "fastq_to_qual_{sample}.log"
+    benchmark:
+        qc_doc + "fastq_to_qual_{sample}.json"
+    shell:
+        "( pigz --decompress --stdout {input.fq_gz} | "
+        "python3 scripts/fastq_to_qual.py "
+        "> {output.qual} ) "
+        "2> {log} 1>&2"
+
+
+
+rule qc_seqclean_sample:
+    """
+    Perform clean reads trimming
+    """
+    input:
+        fasta = qc_dir + "{sample}.trimmomatic.fa",
+        adaptors = raw_dir + "adaptors.fa",
+        univec = raw_dir + "univec.fa"
+    output:
+        fasta = temp(qc_dir + "{sample}.seqclean.fa"),
+        cln = temp(qc_dir + "{sample}.cln")
+    params:
+        slice_size = config["software_params"]["seqclean"]["slice_size"],
+        min_length = config["software_params"]["seqclean"]["min_length"],
+        min_percent = config["software_params"]["seqclean"]["min_percent"],
+        min_length_vector =config["software_params"]["seqclean"]["min_length_vector"]
+    log:
+        qc_doc + "seqclean_{sample}.log"
+    benchmark:
+        qc_doc + "seqclean_{sample}.json"
+    threads:
+        16 # Don't touch this! psx, a component of seqclean, fails above 16!
+    shell:
+        "./src/seqclean-x86_64/seqclean "
+            "{input.fasta} "
+            "-c {threads} "
+            "-n {params.slice_size} "
+            "-v {input.univec},{input.adaptors} "
+            "-l {params.min_length} "
+            "-x {params.min_percent} "
+            "-y {params.min_length_vector} "
+            "-r {output.cln} "
+            "-o {output.fasta} "
+        "2> {log} 1>&2; "
+        "rm -rf cleaning_* err_seqcl_* *.cidx *.fa.log outparts_cln.sort"
+
+
+
+rule qc_cln2qual_sample:
+    """
+    Perform cln2qual (to rebuild the qual file for the surviving reads of
+    seqclean)
+    """
+    input:
+        cln = qc_dir + "{sample}.cln",
+        qual = qc_dir + "{sample}.trimmomatic.qual"
+    output:
+        qual = temp(qc_dir + "{sample}.seqclean.qual")
+    threads:
+        1
+    log:
+        qc_doc + "cln2qual_{sample}.log"
+    benchmark:
+        qc_doc + "cln2qual_{sample}.json"
+    shell:
+        "./src/seqclean-x86_64/cln2qual "
+            "{input.cln} "
+            "{input.qual} "
+        "2> {log} 1>&2 ; "
+        "mv {input.qual}.clean {output.qual} 2>> {log}"
+
+
+
+rule qc_seqclean_fastq_sample:
+    """
+    Convert fasta and qual from seqclean to fastq.gz
+    """
+    input:
+        fasta = qc_dir + "{sample}.seqclean.fa",
+        qual  = qc_dir + "{sample}.seqclean.qual"
+    output:
+        fq_gz = protected(qc_dir + "{sample}.seqclean.fq.gz")
+    threads:
+        2
+    log:
+        qc_doc + "seqclean_fastq_{sample}.log"
+    benchmark:
+        qc_doc + "seqclean_fastq_{sample}.json"
+    shell:
+        "( python scripts/fasta_qual_to_fastq.py "
+            "{input.fasta} "
+            "{input.qual} | "
+        "pigz --best "
+        "> {output.fq_gz} ) "
+        "2> {log}"

@@ -1,0 +1,64 @@
+def fastq_gz_to_merge(wildcards):
+    """
+    Make a list with all the fq.gz to assemble
+    """
+    return [qc_dir + sample + ".seqclean.fq.gz" for sample in config["samples"]]
+
+
+
+rule assembly_merge_fastq:
+    """
+    Join all fastq.gz into a single fastq
+    """
+    input:
+        fastq_gz_to_merge
+    output:
+        fastq = temp(assembly_dir + "merged.fq")
+    threads:
+        1
+    log:
+        assembly_doc + "merge_fastq.log"
+    benchmark:
+        assembly_doc + "merge_fastq.json"
+    shell:
+        "gzip "
+            "--decompress "
+            "--stdout "
+            "{input} "
+        "> {output.fastq} "
+        "2> {log}"
+
+
+
+rule assembly_newbler:
+    """
+    Assemble with newbler
+    """
+    input:
+        fq = assembly_dir + "merged.fq"
+    output:
+        fna = protected(assembly_dir + "454Isotigs.fna"),
+        faa = protected(assembly_dir + "454Isotigs.faa")
+    params:
+        out_dir = assembly_dir,
+        minimum_sequence_length = config["software_params"]["gsAssembler"]["minimum_sequence_length"],
+        minimum_overlap_identity = config["software_params"]["gsAssembler"]["minimum_overlap_identity"],
+        minimum_overlap_length = config["software_params"]["gsAssembler"]["minimum_overlap_length"],
+        additional_params= config["software_params"]["gsAssembler"]["additional_params"]
+    threads:
+        24
+    log:
+        assembly_doc + "newbler.log"
+    benchmark:
+        assembly_doc + "newbler.json"
+    shell:
+        "./src/454/bin/runAssembly "
+            "-cdna "
+            "-cpu {threads} "
+            "-minlen {params.minimum_sequence_length} "
+            "-mi {params.minimum_overlap_identity} "
+            "-ml {params.minimum_overlap_length} "
+            "-o {params.out_dir} "
+            "{params.additional_params} "
+            "{input.fq} "
+        "2> {log} 1>&2"

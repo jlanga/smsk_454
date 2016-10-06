@@ -1,0 +1,4 @@
+rule clean:
+    shell:
+        "rm -r results/ ; "
+        "rm -r doc/ "
