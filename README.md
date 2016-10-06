@@ -4,9 +4,17 @@
 
 ## 1. Description
 
-This is a small skeleton to create Snakemake workflows. [Snakemake](https://bitbucket.org/snakemake/snakemake/wiki/Home) "is a workflow management system that aims to reduce the complexity of creating workflows by providing a fast and comfortable execution environment, together with a clean and modern specification language in python style."
+This is a workflow to assemble RNA reads from 454 into a transcriptome. The procedure is as follows:
 
-The idea is to create a workflow with of snakefiles, resolve dependencies with pip and brew, and
+1. Quality control
+
+    1. Base calling with `PyroBayes`
+    2. Quality and length trimming with `Trimmomatic`
+    3. Adaptor and vector removal with `seqclean`
+
+2. Assembly
+
+    With `gsAssembler` from Roche's Data Analysis tools (`newbler`)
 
 ## 2. First steps
 
@@ -28,8 +36,9 @@ The idea is to create a workflow with of snakefiles, resolve dependencies with p
     bash scripts/install/brew.sh
     bash scripts/install/from_brew.sh
     bash scripts/install/from_pip3.sh
-    bash scripts/install/from_tarball.#!/bin/sh
-
+    bash scripts/install/from_tarball.sh
+    ```
+  
 4. Additional requirements
 
     Pyrobayes is an accurate base caller for 454 datasets. It used to be available through free registration at [here](http://bioinformatics.bc.edu/marthlab/PyroBayes). It used to be a file called `pyrobayes.unified_release_64bit.tar.gz`. If you are able to get it, do the following
@@ -59,10 +68,16 @@ The idea is to create a workflow with of snakefiles, resolve dependencies with p
     And a window will pop up. Select "local installation" and choose as installation path the `src/` directory of this project (in my case `/home/jlanga/pipelines/smsk_454/src/454/`)
 
 
-4. Execute the pipeline:
+4. Download sample data from the European Nucleotide Archive (ENA):
 
     ```sh
-    snakemake
+    bash scripts/download_test_data.sh
+    ```
+
+5. Execute the pipeline:
+
+    ```sh
+    snakemake -j 24
     ```
 
 
