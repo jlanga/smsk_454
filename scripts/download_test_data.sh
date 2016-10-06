@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+mkdir -p data/sff/
+
 wget \
     --continue \
     --output-document data/sff/her_b34.sff \
