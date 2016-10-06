@@ -1,6 +1,6 @@
 # smsk: A Snakemake skeleton to jumpstart projects
 
-[![Build Status](https://travis-ci.org/jlanga/smsk.svg?branch=master)](https://travis-ci.org/jlanga/smsk)
+<!--[![Build Status](https://travis-ci.org/jlanga/smsk_454.svg?branch=master)](https://travis-ci.org/jlanga/smsk_454)-->
 
 ## 1. Description
 
