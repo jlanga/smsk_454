@@ -3,18 +3,18 @@ samples:
         sff: data/sff/her_b34.sff
     sample2:
         sff: data/sff/her_b64.sff
-    sample3:
-        sff: data/sff/her_f05.sff
-    sample4:
-        sff: data/sff/her_f49.sff
-    sample5:
-        sff: data/sff/her_p45.sff
-    sample6:
-        sff: data/sff/her_p78.sff
-    sample7:
-        sff: data/sff/her_r31.sff
-    sample8:
-        sff: data/sff/her_r61.sff
+#    sample3:
+#        sff: data/sff/her_f05.sff
+#    sample4:
+#        sff: data/sff/her_f49.sff
+#    sample5:
+#        sff: data/sff/her_p45.sff
+#    sample6:
+#        sff: data/sff/her_p78.sff
+#    sample7:
+#        sff: data/sff/her_r31.sff
+#    sample8:
+#        sff: data/sff/her_r61.sff
 
 adaptors:
     "data/adaptors/adaptors.fa"
