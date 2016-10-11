@@ -44,160 +44,105 @@ rule qc_join_fasta_qual_sample:
 
 
 
-rule qc_trimmomatic_sample:
-    """
-    Perform a mild trimmomatic run
-    """
+rule qc_decompress_pyrobayes_fq_sample:
     input:
         fq_gz = qc_dir + "{sample}.pyrobayes.fq.gz"
     output:
-        fq_gz = qc_dir + "{sample}.trimmomatic.fq.gz"
+        fq = temp(qc_dir + "{sample}.pyrobayes.fq")
+    threads:
+        1
+    log:
+        qc_doc + "decompress_pyrobayes_fq_{sample}.log"
+    benchmark:
+        qc_doc + "decompress_pyrobayes_fq_{sample}.json"
+    shell:
+        "pigz --decompress --keep {input.fq_gz} 2> {log}"
+
+
+
+rule qc_snowhite_sample:
+    input:
+        tarball= "src/SnoWhite_2.0.3_release.tar.gz",
+        fastq= qc_dir + "{sample}.pyrobayes.fq",
+        adaptors= raw_dir + "adaptors.fa"
+    output:
+        fastq= temp(qc_dir + "{sample}.snowhite.fq")
     params:
-        trimmomatic = config["software_params"]["trimmomatic"]
+        out_folder = "out",
+        minimum_sequence_length= config["software_params"]["snowhite"]["minimum_sequence_length"],
+        delete_temporary_files= config["software_params"]["snowhite"]["delete_temporary_files"],
+        output_fastq= config["software_params"]["snowhite"]["output_fastq"],
+        split_in_subfiles= config["software_params"]["snowhite"]["split_in_subfiles"],
+        minimum_quality= config["software_params"]["snowhite"]["minimum_quality"],
+        end_clipping= config["software_params"]["snowhite"]["end_clipping"],
+        bases_to_clip= config["software_params"]["snowhite"]["bases_to_clip"],
+        execute_tagdust= config["software_params"]["snowhite"]["execute_tagdust"],
+        false_discovery_rate= config["software_params"]["snowhite"]["false_discovery_rate"],
+        execute_seqclean= config["software_params"]["snowhite"]["execute_seqclean"],
+        execute_poly_trimming= config["software_params"]["snowhite"]["execute_poly_trimming"],
+        poly_tail_min_repeat_length= config["software_params"]["snowhite"]["poly_tail_min_repeat_length"],
+        poly_a_ends= config["software_params"]["snowhite"]["poly_a_ends"],
+        poly_t_ends= config["software_params"]["snowhite"]["poly_t_ends"],
+        poly_tail_terminal_bases_cap= config["software_params"]["snowhite"]["poly_tail_terminal_bases_cap"],
+        poly_tail_minimum_repeat_length= config["software_params"]["snowhite"]["poly_tail_minimum_repeat_length"],
+        internal_poly_minimum_length= config["software_params"]["snowhite"]["internal_poly_minimum_length"],
+        keep_longer_end= config["software_params"]["snowhite"]["keep_longer_end"],
+        ns_as_a_or_t= config["software_params"]["snowhite"]["ns_as_a_or_t"],
+        allow_wobble= config["software_params"]["snowhite"]["allow_wobble"],
     threads:
-        4
+        16
     log:
-        qc_doc + "trimmomatic_{sample}.log"
+        qc_doc + "snowhite_{sample}.log"
     benchmark:
-        qc_doc + "trimmomatic_{sample}.json"
+        qc_doc + "snowhite_{sample}.json"
+    shadow:
+        "shallow"
     shell:
-        "trimmomatic SE "
-            "-phred64 "
-            "<(pigz --decompress --stdout {input.fq_gz}) "
-            ">(pigz --best > {output.fq_gz}) "
-            "{params.trimmomatic} "
-        "2> {log} 1>&2"
+        "tar xvf {input.tarball} -C . 2> {log} 1>&2 ; "
+        "mv SnoWhite_2.0.3_release/* . ; "
+        "yes | perl snowhite_2.0.3.pl "
+            "-f {input.fastq} "
+            "-o {params.out_folder} "
+            "-v {input.adaptors} "
+            "-m {params.minimum_sequence_length} "
+            "-g {params.delete_temporary_files} "
+            "-R {params.output_fastq} "
+            "-Q {params.minimum_quality} "
+            "`#-E {params.end_clipping}` "
+            "`#-c {params.bases_to_clip}` "
+            "-D {params.execute_tagdust} "
+            "-d {params.false_discovery_rate} "
+            "-L {params.execute_seqclean} "
+            "-p {threads} "
+            "-Y {params.execute_poly_trimming} "
+            "-l {params.poly_tail_min_repeat_length} "
+            "-a {params.poly_a_ends} "
+            "-t {params.poly_t_ends} "
+            "-b {params.poly_tail_terminal_bases_cap} "
+            "-r {params.poly_tail_min_repeat_length} "
+            "-i {params.internal_poly_minimum_length} "
+            "-k {params.keep_longer_end} "
+            "-n {params.ns_as_a_or_t} "
+            "-w {params.allow_wobble} "
+        "2>> {log} 1>&2 || "
+        "mv "
+            "out/FinalOutput/out.clean "
+            "{output.fastq} "
+        "2>> {log} 1>&2 || "
+        "true #Snowhite returns exit status different from 0 even after success"
 
 
 
-
-rule qc_fastq_to_fasta_sample:
-    """
-    Convert fastq to fasta (for seqclean).
-    """
+rule qc_compress_sample:
     input:
-        fq_gz = qc_dir + "{sample}.trimmomatic.fq.gz"
+        fq = qc_dir + "{sample}.snowhite.fq"
     output:
-        fasta = temp(qc_dir + "{sample}.trimmomatic.fa")
+        fq_gz = protected(qc_dir + "{sample}.snowhite.fq.gz")
     threads:
-        1
+        1 # Just do it even though pigz uses all threads
     log:
-        qc_doc + "fastq_to_fasta_{sample}.log"
+        qc_doc + "compress_{sample}.log"
     benchmark:
-        qc_doc + "fastq_to_fasta_{sample}.json"
+        qc_doc + "compress_{sample}.json"
     shell:
-        "( pigz --decompress --stdout {input.fq_gz} | "
-        "python3 scripts/fastq_to_fasta.py "
-        "> {output.fasta} ) "
-        "2> {log} 1>&2"
-
-
-
-
-rule qc_fastq_to_qual_sample:
-    """
-    Convert fastq to qual (for cln2qual).
-    """
-    input:
-        fq_gz = qc_dir + "{sample}.trimmomatic.fq.gz"
-    output:
-        qual = temp(qc_dir + "{sample}.trimmomatic.qual")
-    threads:
-        1
-    log:
-        qc_doc + "fastq_to_qual_{sample}.log"
-    benchmark:
-        qc_doc + "fastq_to_qual_{sample}.json"
-    shell:
-        "( pigz --decompress --stdout {input.fq_gz} | "
-        "python3 scripts/fastq_to_qual.py "
-        "> {output.qual} ) "
-        "2> {log} 1>&2"
-
-
-
-rule qc_seqclean_sample:
-    """
-    Perform clean reads trimming
-    """
-    input:
-        fasta = qc_dir + "{sample}.trimmomatic.fa",
-        adaptors = raw_dir + "adaptors.fa",
-        univec = raw_dir + "univec.fa"
-    output:
-        fasta = temp(qc_dir + "{sample}.seqclean.fa"),
-        cln = temp(qc_dir + "{sample}.cln")
-    params:
-        slice_size = config["software_params"]["seqclean"]["slice_size"],
-        min_length = config["software_params"]["seqclean"]["min_length"],
-        min_percent = config["software_params"]["seqclean"]["min_percent"],
-        min_length_vector =config["software_params"]["seqclean"]["min_length_vector"]
-    log:
-        qc_doc + "seqclean_{sample}.log"
-    benchmark:
-        qc_doc + "seqclean_{sample}.json"
-    threads:
-        16 # Don't touch this! psx, a component of seqclean, fails above 16!
-    shell:
-        "./src/seqclean-x86_64/seqclean "
-            "{input.fasta} "
-            "-c {threads} "
-            "-n {params.slice_size} "
-            "-v {input.univec},{input.adaptors} "
-            "-l {params.min_length} "
-            "-x {params.min_percent} "
-            "-y {params.min_length_vector} "
-            "-r {output.cln} "
-            "-o {output.fasta} "
-        "2> {log} 1>&2; "
-        "rm -rf cleaning_* err_seqcl_* *.cidx *.fa.log outparts_cln.sort"
-
-
-
-rule qc_cln2qual_sample:
-    """
-    Perform cln2qual (to rebuild the qual file for the surviving reads of
-    seqclean)
-    """
-    input:
-        cln = qc_dir + "{sample}.cln",
-        qual = qc_dir + "{sample}.trimmomatic.qual"
-    output:
-        qual = temp(qc_dir + "{sample}.seqclean.qual")
-    threads:
-        1
-    log:
-        qc_doc + "cln2qual_{sample}.log"
-    benchmark:
-        qc_doc + "cln2qual_{sample}.json"
-    shell:
-        "./src/seqclean-x86_64/cln2qual "
-            "{input.cln} "
-            "{input.qual} "
-        "2> {log} 1>&2 ; "
-        "mv {input.qual}.clean {output.qual} 2>> {log}"
-
-
-
-rule qc_seqclean_fastq_sample:
-    """
-    Convert fasta and qual from seqclean to fastq.gz
-    """
-    input:
-        fasta = qc_dir + "{sample}.seqclean.fa",
-        qual  = qc_dir + "{sample}.seqclean.qual"
-    output:
-        fq_gz = protected(qc_dir + "{sample}.seqclean.fq.gz")
-    threads:
-        2
-    log:
-        qc_doc + "seqclean_fastq_{sample}.log"
-    benchmark:
-        qc_doc + "seqclean_fastq_{sample}.json"
-    shell:
-        "( python scripts/fasta_qual_to_fastq.py "
-            "{input.fasta} "
-            "{input.qual} | "
-        "pigz --best "
-        "> {output.fq_gz} ) "
-        "2> {log}"
+        "pigz --best {input.fq} 2> {log}"

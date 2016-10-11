@@ -2,7 +2,7 @@ def fastq_gz_to_merge(wildcards):
     """
     Make a list with all the fq.gz to assemble
     """
-    return [qc_dir + sample + ".seqclean.fq.gz" for sample in config["samples"]]
+    return [qc_dir + sample + ".snowhite.fq.gz" for sample in config["samples"]]
 
 
 

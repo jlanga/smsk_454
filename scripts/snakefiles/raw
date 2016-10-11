@@ -46,7 +46,7 @@ rule raw_download_univec:
     Download Univec from NCBI
     """
     output:
-        fa = protected(raw_dir + "univec.fa")
+        fa = "data/univec.fa" # If you set it to protected, later SnoWhite will complain because it copies it and later tries to delete the copy.
     threads:
         1
     params:
@@ -61,3 +61,19 @@ rule raw_download_univec:
             "--output-document {output.fa} "
             "{params.univec_url} "
         "2> {log}"
+
+
+
+rule raw_link_univec:
+    input:
+        fa = "data/univec.fa"
+    output:
+        fa = raw_dir + "univec.fa"
+    threads:
+        1
+    log:
+        raw_doc + "link_univec.log"
+    benchmark:
+        raw_doc + "link_univec.json"
+    shell:
+        "ln -s $(readlink --canonicalize {input.fa}) {output.fa} 2> {log}"
