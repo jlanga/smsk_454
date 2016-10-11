@@ -9,8 +9,7 @@ This is a workflow to assemble RNA reads from 454 into a transcriptome. The proc
 1. Quality control
 
     1. Base calling with `PyroBayes`
-    2. Quality and length trimming with `Trimmomatic`
-    3. Adaptor and vector removal with `seqclean`
+    2. Quality, length and adaptor trimming with `SnoWhite`
 
 2. Assembly
 
@@ -110,6 +109,10 @@ smsk
 - [Seqclean]
 
 - [Fastqc]
+
+- [Snowhite]
+
+- [Tagdust]
 
 - [PyroBayes]
 
