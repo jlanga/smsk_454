@@ -1,4 +1,38 @@
 rule clean:
+    """
+    Clean everything
+    """
     shell:
-        "rm -r results/ ; "
-        "rm -r doc/ "
+        "rm -rfi results/ doc/"
+
+
+
+rule clean_raw:
+    """
+    Clean only copies of raw data
+    """
+    shell: "rm -rf {raw_dir} {raw_doc}"
+
+
+
+rule clean_qc:
+    """
+    Clean only quality control files
+    """
+    shell: "rm -rf {qc_dir} {qc_doc} "
+
+
+
+rule clean_assembly:
+    """
+    Clean only assemblies
+    """
+    shell: "rm -rf {assembly_dir} {assembly_doc}"
+
+
+
+rule clean_report:
+    """
+    Clean only reports
+    """
+    shell: "rm -rf {report_dir} {report_doc}"

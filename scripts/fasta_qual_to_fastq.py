@@ -6,7 +6,7 @@ import sys
 
 def convert(fasta, qual, fastq):
     SeqIO.write(
-        record for record in PairedFastaQualIterator(fasta, qual),
+        (record for record in PairedFastaQualIterator(fasta, qual)),
         fastq,
         "fastq"
     )

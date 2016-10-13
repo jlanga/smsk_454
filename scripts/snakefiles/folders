@@ -6,3 +6,6 @@ qc_doc = "doc/qc/"
 
 assembly_dir = "results/assembly/"
 assembly_doc = "doc/assembly/"
+
+report_dir = "results/report/"
+report_doc = "doc/report/"

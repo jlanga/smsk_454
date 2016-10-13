@@ -18,6 +18,31 @@ rule raw_make_link_sff_sample:
 
 
 
+rule raw_sff_to_fastq_sample:
+    """
+    Convert original sff to fastq.gz
+    """
+    input:
+        sff= raw_dir + "{sample}.sff"
+    output:
+        fq_gz= protected(raw_dir + "{sample}.raw.fq.gz")
+    threads:
+        1
+    log:
+        raw_doc + "sff_to_fastq_{sample}.log"
+    benchmark:
+        raw_doc + "sff_to_fastq_{sample}.json"
+    shell:
+        "(python3 scripts/fasta_qual_to_fastq.py "
+            "<(./src/454/bin/sffinfo -s {input.sff}) "
+            "<(./src/454/bin/sffinfo -q {input.sff}) | "
+        "pigz "
+            "--best "
+        "> {output.fq_gz} ) "
+        "2> {log}"
+
+
+
 
 rule raw_make_link_adaptors:
     """
@@ -38,42 +63,3 @@ rule raw_make_link_adaptors:
             "$(readlink --canonicalize {input.fa}) "
             "{output.fa} "
         "2> {log}"
-
-
-
-rule raw_download_univec:
-    """
-    Download Univec from NCBI
-    """
-    output:
-        fa = "data/univec.fa" # If you set it to protected, later SnoWhite will complain because it copies it and later tries to delete the copy.
-    threads:
-        1
-    params:
-        univec_url = config["univec_url"]
-    log:
-        raw_doc + "download_univec.log"
-    benchmark:
-        raw_doc + "download_univec.json"
-    shell:
-        "wget "
-            "--continue "
-            "--output-document {output.fa} "
-            "{params.univec_url} "
-        "2> {log}"
-
-
-
-rule raw_link_univec:
-    input:
-        fa = "data/univec.fa"
-    output:
-        fa = raw_dir + "univec.fa"
-    threads:
-        1
-    log:
-        raw_doc + "link_univec.log"
-    benchmark:
-        raw_doc + "link_univec.json"
-    shell:
-        "ln -s $(readlink --canonicalize {input.fa}) {output.fa} 2> {log}"

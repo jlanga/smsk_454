@@ -1,8 +1,8 @@
 samples:
     sample1:
-        sff: data/sff/her_b34.sff
+        sff: data/reads/222_FZUWXHW09.sff
     sample2:
-        sff: data/sff/her_b64.sff
+        sff: data/reads/221_FZUWXHW01.sff
 #    sample3:
 #        sff: data/sff/her_f05.sff
 #    sample4:
@@ -103,3 +103,7 @@ software_params:
         # -m: store reads in memory for fastest results
         # -tr: output trimmed reads
         # -noace: disable ace output
+    multiqc:
+        template: default # simple default_dev geo default
+        data_format: tsv # tsv yaml json
+        additional_params: ""

@@ -1,0 +1,163 @@
+rule report_fastqc_sff_sample:
+    """
+    Run fastqc over original reads
+    """
+    input:
+        fastq = raw_dir + "{sample}.raw.fq.gz"
+    output:
+        zip   = protected(report_dir + "{sample}.raw_fastqc.zip"),
+        html  = protected(report_dir + "{sample}.raw_fastqc.html")
+    threads:
+        1
+    params:
+        outdir = report_dir
+    log:
+        report_doc + "fastqc_pyrobayes_{sample}.log"
+    benchmark:
+        report_doc + "fastqc_pyrobayes_{sample}.log"
+    shell:
+        "fastqc "
+            "--nogroup "
+            "--outdir {params.outdir} "
+            "{input.fastq} "
+        "> {log} 2>&1"
+
+
+
+rule report_fastqc_pyrobayes_sample:
+    """
+    Run fastqc over corrected reads with pyrobayes
+    """
+    input:
+        fastq = qc_dir + "{sample}.pyrobayes.fq.gz"
+    output:
+        zip   = protected(report_dir + "{sample}.pyrobayes_fastqc.zip"),
+        html  = protected(report_dir + "{sample}.pyrobayes_fastqc.html")
+    threads:
+        1
+    params:
+        outdir = report_dir
+    log:
+        report_doc + "fastqc_pyrobayes_{sample}.log"
+    benchmark:
+        report_doc + "fastqc_pyrobayes_{sample}.log"
+    shell:
+        "fastqc "
+            "--nogroup "
+            "--outdir {params.outdir} "
+            "{input.fastq} "
+        "> {log} 2>&1"
+
+
+
+rule report_fastqc_snowhite_sample:
+    """
+    Run fastqc over filtered reads with snowhite
+    """
+    input:
+        fastq = qc_dir + "{sample}.snowhite.fq.gz"
+    output:
+        zip   = protected(report_dir + "{sample}.snowhite_fastqc.zip"),
+        html  = protected(report_dir + "{sample}.snowhite_fastqc.html")
+    threads:
+        1
+    params:
+        outdir = report_dir
+    log:
+        report_doc + "fastqc_snowhite_{sample}.log"
+    benchmark:
+        report_doc + "fastqc_snowhite_{sample}.log"
+    shell:
+        "fastqc "
+            "--nogroup "
+            "--outdir {params.outdir} "
+            "{input.fastq} "
+        "> {log} 2>&1"
+
+
+
+rule report_multiqc_sample:
+    """
+    Run multiqc over all the fastqc reports of sample
+    """
+    input:
+        raw_zip = report_dir + "{sample}.raw_fastqc.zip",
+        pyrobayes_zip = report_dir + "{sample}.pyrobayes_fastqc.zip",
+        snowhite_zip = report_dir + "{sample}.snowhite_fastqc.zip"
+    output:
+        html = protected(report_dir + "multiqc_{sample}.html")
+    threads:
+        1
+    params:
+        txt = report_dir + "{sample}_fastqclist.txt",
+        title = "\'MultiQC report for {sample}\'",
+        template = config["software_params"]["multiqc"]["template"],
+        data_format = config["software_params"]["multiqc"]["data_format"],
+        additional_params = config["software_params"]["multiqc"]["additional_params"],
+    log:
+        report_doc + "multiqc_{sample}.log"
+    benchmark:
+        report_doc + "multiqc_{sample}.json"
+    shell:
+        "echo {input} | "
+        "tr -s \" \" | "
+        "tr \" \" \"\\n\" "
+        "> {params.txt} 2> {log} ; "
+        "multiqc "
+            "--fullnames "
+            "--title {params.title} "
+            "--filename {output.html} "
+            "--template {params.template} "
+            "--file-list {params.txt} "
+            "--data-format {params.data_format} "
+            "{params.additional_params} "
+        "2>> {log} 1>&2 ; "
+
+
+
+rule multiqc_all:
+    """
+    Run multiqc over all fastqc reports
+    """
+    input:
+        expand(
+            report_dir + "{sample}.raw_fastqc.zip",
+            sample = config["samples"]
+        ),
+        expand(
+            report_dir + "{sample}.pyrobayes_fastqc.zip",
+            sample = config["samples"]
+        ),
+        expand(
+            report_dir + "{sample}.snowhite_fastqc.zip",
+            sample = config["samples"]
+        )
+    output:
+        html= protected(report_dir + "multiqc.html"),
+
+    threads:
+        1
+    params:
+        txt = report_dir + "all_fastqc.txt",
+        title = "\'MultiQC report for all samples\'",
+        template = config["software_params"]["multiqc"]["template"],
+        data_format = config["software_params"]["multiqc"]["data_format"],
+        additional_params = config["software_params"]["multiqc"]["additional_params"]
+    log:
+        report_doc + "multiqc_all.log"
+    benchmark:
+        report_doc + "multiqc_all.json"
+    shell:
+        "echo {input} | "
+        "tr -s \" \" | "
+        "tr \" \" \"\\n\" "
+        "> {params.txt} 2> {log} ; "
+        "multiqc "
+            "--fullnames "
+            "--title {params.title} "
+            "--filename {output.html} "
+            "--template {params.template} "
+            "--file-list {params.txt} "
+            "--data-format {params.data_format} "
+            "{params.additional_params} "
+        "2>> {log} 1>&2"

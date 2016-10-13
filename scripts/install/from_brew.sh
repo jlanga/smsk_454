@@ -8,8 +8,7 @@ brew install \
 # Homebrew science packages to run the example
 brew tap homebrew/science
 brew install \
-    homebrew/science/fastqc \
-    homebrew/science/trimmomatic
+    homebrew/science/fastqc
 
 # Examples of other languages: python3, R, ruby, perl
 # brew install \

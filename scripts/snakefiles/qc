@@ -24,6 +24,9 @@ rule qc_pyrobayes_sample:
 
 
 rule qc_join_fasta_qual_sample:
+    """
+    Join fasta and qual files into a fastq.gz
+    """
     input:
         fasta = qc_dir + "{sample}.pyrobayes.fasta",
         qual  = qc_dir + "{sample}.pyrobayes.fasta.qual"
@@ -45,6 +48,9 @@ rule qc_join_fasta_qual_sample:
 
 
 rule qc_decompress_pyrobayes_fq_sample:
+    """
+    Decompress fastq.gz from pyrobayes for snowhite
+    """
     input:
         fq_gz = qc_dir + "{sample}.pyrobayes.fq.gz"
     output:
@@ -56,18 +62,26 @@ rule qc_decompress_pyrobayes_fq_sample:
     benchmark:
         qc_doc + "decompress_pyrobayes_fq_{sample}.json"
     shell:
-        "pigz --decompress --keep {input.fq_gz} 2> {log}"
+        "pigz "
+            "--decompress "
+            "--stdout "
+            "{input.fq_gz} "
+        "> {output.fq} "
+        "2> {log}"
 
 
 
 rule qc_snowhite_sample:
+    """
+    Run Snowhite
+    """
     input:
-        tarball= "src/SnoWhite_2.0.3_release.tar.gz",
         fastq= qc_dir + "{sample}.pyrobayes.fq",
         adaptors= raw_dir + "adaptors.fa"
     output:
         fastq= temp(qc_dir + "{sample}.snowhite.fq")
     params:
+        tarball= "src/SnoWhite_2.0.3_release.tar.gz",
         out_folder = "out",
         minimum_sequence_length= config["software_params"]["snowhite"]["minimum_sequence_length"],
         delete_temporary_files= config["software_params"]["snowhite"]["delete_temporary_files"],
@@ -98,7 +112,7 @@ rule qc_snowhite_sample:
     shadow:
         "shallow"
     shell:
-        "tar xvf {input.tarball} -C . 2> {log} 1>&2 ; "
+        "tar xvf {params.tarball} -C . 2> {log} 1>&2 ; "
         "mv SnoWhite_2.0.3_release/* . ; "
         "yes | perl snowhite_2.0.3.pl "
             "-f {input.fastq} "
@@ -129,11 +143,14 @@ rule qc_snowhite_sample:
             "out/FinalOutput/out.clean "
             "{output.fastq} "
         "2>> {log} 1>&2 || "
-        "true #Snowhite returns exit status different from 0 even after success"
+        "true #Snowhite returns exit status different from 0 even after success ; "
 
 
 
 rule qc_compress_sample:
+    """
+    Compress snowhite's results
+    """
     input:
         fq = qc_dir + "{sample}.snowhite.fq"
     output:
@@ -145,4 +162,4 @@ rule qc_compress_sample:
     benchmark:
         qc_doc + "compress_{sample}.json"
     shell:
-        "pigz --best {input.fq} 2> {log}"
+        "pigz --best --stdout {input.fq} > {output.fq_gz} 2> {log}"
