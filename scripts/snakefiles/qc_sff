@@ -3,12 +3,12 @@ rule qc_pyrobayes_sample:
     Perform base calling with Pyrobayes
     """
     input:
-        sff   = raw_dir + "{sample}.sff"
+        sff   = raw_dir + "{sample}.from_sff.sff"
     output:
-        fasta = temp(qc_dir + "{sample}.pyrobayes.fasta"),
-        qual  = temp(qc_dir + "{sample}.pyrobayes.fasta.qual")
+        fasta = temp(qc_dir + "{sample}.from_sff.pyrobayes.fasta"),
+        qual  = temp(qc_dir + "{sample}.from_sff.pyrobayes.fasta.qual")
     params:
-        stub  = qc_dir + "{sample}.pyrobayes",
+        stub  = qc_dir + "{sample}.from_sff.pyrobayes",
     log:
         qc_doc + "pyrobayes_{sample}.log"
     benchmark:
@@ -28,10 +28,10 @@ rule qc_join_fasta_qual_sample:
     Join fasta and qual files into a fastq.gz
     """
     input:
-        fasta = qc_dir + "{sample}.pyrobayes.fasta",
-        qual  = qc_dir + "{sample}.pyrobayes.fasta.qual"
+        fasta = qc_dir + "{sample}.from_sff.pyrobayes.fasta",
+        qual  = qc_dir + "{sample}.from_sff.pyrobayes.fasta.qual"
     output:
-        fastq_gz = protected(qc_dir + "{sample}.pyrobayes.fq.gz")
+        fastq_gz = protected(qc_dir + "{sample}.from_sff.pyrobayes.fq.gz")
     threads:
         4
     log:
@@ -39,7 +39,7 @@ rule qc_join_fasta_qual_sample:
     benchmark:
         qc_doc + "join_fasta_qual_{sample}.json"
     shell:
-        "( python3 scripts/fasta_qual_to_fastq.py "
+        "( python3 bin/fasta_qual_to_fastq.py "
             "{input.fasta} "
             "{input.qual} | "
         "pigz --best > {output.fastq_gz} ) "
@@ -49,12 +49,12 @@ rule qc_join_fasta_qual_sample:
 
 rule qc_decompress_pyrobayes_fq_sample:
     """
-    Decompress fastq.gz from pyrobayes for snowhite
+    Decompress fastq.gz from pyrobayes for snowhite (sff files)
     """
     input:
-        fq_gz = qc_dir + "{sample}.pyrobayes.fq.gz"
+        fq_gz = qc_dir + "{sample}.from_sff.pyrobayes.fq.gz"
     output:
-        fq = temp(qc_dir + "{sample}.pyrobayes.fq")
+        fq = temp(qc_dir + "{sample}.from_sff.pyrobayes.fq")
     threads:
         1
     log:
@@ -71,15 +71,15 @@ rule qc_decompress_pyrobayes_fq_sample:
 
 
 
-rule qc_snowhite_sample:
+rule qc_snowhite_from_sff_sample:
     """
-    Run Snowhite
+    Run Snowhite (for raw sff files)
     """
     input:
-        fastq= qc_dir + "{sample}.pyrobayes.fq",
+        fastq= qc_dir + "{sample}.from_sff.pyrobayes.fq",
         adaptors= raw_dir + "adaptors.fa"
     output:
-        fastq= temp(qc_dir + "{sample}.snowhite.fq")
+        fastq= temp(qc_dir + "{sample}.from_sff.snowhite.fq")
     params:
         tarball= "src/SnoWhite_2.0.3_release.tar.gz",
         out_folder = "out",
@@ -104,11 +104,11 @@ rule qc_snowhite_sample:
         ns_as_a_or_t= config["software_params"]["snowhite"]["ns_as_a_or_t"],
         allow_wobble= config["software_params"]["snowhite"]["allow_wobble"],
     threads:
-        16
+        2 # Snowhite is mostly monothreaded
     log:
-        qc_doc + "snowhite_{sample}.log"
+        qc_doc + "snowhite_from_sff_{sample}.log"
     benchmark:
-        qc_doc + "snowhite_{sample}.json"
+        qc_doc + "snowhite_from_sff_{sample}.json"
     shadow:
         "shallow"
     shell:
@@ -147,19 +147,19 @@ rule qc_snowhite_sample:
 
 
 
-rule qc_compress_sample:
+rule qc_compress_from_sff_sample:
     """
-    Compress snowhite's results
+    Compress snowhite's results (from sff raw files).
     """
     input:
-        fq = qc_dir + "{sample}.snowhite.fq"
+        fq = qc_dir + "{sample}.from_sff.snowhite.fq"
     output:
-        fq_gz = protected(qc_dir + "{sample}.snowhite.fq.gz")
+        fq_gz = protected(qc_dir + "{sample}.from_sff.snowhite.fq.gz")
     threads:
         1 # Just do it even though pigz uses all threads
     log:
-        qc_doc + "compress_{sample}.log"
+        qc_doc + "compress_from_sff_{sample}.log"
     benchmark:
-        qc_doc + "compress_{sample}.json"
+        qc_doc + "compress_from_sff_{sample}.json"
     shell:
         "pigz --best --stdout {input.fq} > {output.fq_gz} 2> {log}"
