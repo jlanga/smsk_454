@@ -7,7 +7,7 @@ SAMPLES_FASTQ = config["samples_fastq"] if config["samples_fastq"] is not None e
 
 SAMPLES = [x for x in SAMPLES_SFF] + [x for x in SAMPLES_FASTQ]
 
-snakefiles = "scripts/snakefiles/"
+snakefiles = "bin/snakefiles/"
 
 include: snakefiles + "folders"
 include: snakefiles + "clean"
