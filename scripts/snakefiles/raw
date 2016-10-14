@@ -50,7 +50,7 @@ rule raw_sff_to_fastq_sample:
     benchmark:
         raw_doc + "sff_to_fastq_{sample}.json"
     shell:
-        "(python3 scripts/fasta_qual_to_fastq.py "
+        "(python3 bin/fasta_qual_to_fastq.py "
             "<(./src/454/bin/sffinfo -s {input.sff}) "
             "<(./src/454/bin/sffinfo -q {input.sff}) | "
         "pigz "

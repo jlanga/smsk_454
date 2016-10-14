@@ -30,11 +30,11 @@ rule all:
     """
     input:
         expand(
-            report_dir + "multiqc_{sample}.html",
+            report_dir + "multiqc_from_sff_{sample}.html",
             sample = SAMPLES_SFF
         ),
         expand(
-            report_dir + "multiqc_{sample}.html",
+            report_dir + "multiqc_from_fastq_{sample}.html",
             sample = SAMPLES_FASTQ
         ),
         report_dir + "multiqc.html",
