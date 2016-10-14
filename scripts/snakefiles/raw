@@ -3,9 +3,9 @@ rule raw_make_link_sff_sample:
     Create links from original file to other one in data/sff/{sample_name}.sff
     """
     input:
-        sff = lambda wildcards: config["samples"][wildcards.sample]["sff"]
+        sff = lambda wildcards: config["samples_sff"][wildcards.sample]["sff"]
     output:
-        sff = protected(raw_dir + "{sample}.sff")
+        sff = protected(raw_dir + "{sample}.from_sff.sff")
     log:
         raw_doc + "make_link_sff_{sample}.log"
     benchmark:
@@ -18,14 +18,31 @@ rule raw_make_link_sff_sample:
 
 
 
+rule raw_make_link_fastq_sample:
+    input:
+        fastq = lambda wildcards: config["samples_fastq"][wildcards.sample]["fastq"]
+    output:
+        fastq = protected(raw_dir + "{sample}.from_fastq.raw.fq.gz")
+    log:
+        raw_doc + "make_link_fastq_{sample}.log"
+    benchmark:
+        raw_doc + "make_link_fastq_{sample}.json"
+    shell:
+        "ln --symbolic "
+            "$(readlink --canonicalize {input.fastq} "
+            "{output.fastq}) "
+        "2> {log}"
+
+
+
 rule raw_sff_to_fastq_sample:
     """
     Convert original sff to fastq.gz
     """
     input:
-        sff= raw_dir + "{sample}.sff"
+        sff= raw_dir + "{sample}.from_sff.sff"
     output:
-        fq_gz= protected(raw_dir + "{sample}.raw.fq.gz")
+        fq_gz= protected(raw_dir + "{sample}.from_sff.raw.fq.gz")
     threads:
         1
     log:
@@ -33,14 +50,13 @@ rule raw_sff_to_fastq_sample:
     benchmark:
         raw_doc + "sff_to_fastq_{sample}.json"
     shell:
-        "(python3 scripts/fasta_qual_to_fastq.py "
+        "(python3 bin/fasta_qual_to_fastq.py "
             "<(./src/454/bin/sffinfo -s {input.sff}) "
             "<(./src/454/bin/sffinfo -q {input.sff}) | "
         "pigz "
             "--best "
         "> {output.fq_gz} ) "
         "2> {log}"
-
 
 
 

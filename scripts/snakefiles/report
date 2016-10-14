@@ -1,20 +1,20 @@
-rule report_fastqc_sff_sample:
+rule report_fastqc_raw_from_sff_sample:
     """
     Run fastqc over original reads
     """
     input:
-        fastq = raw_dir + "{sample}.raw.fq.gz"
+        fastq = raw_dir + "{sample}.from_sff.raw.fq.gz"
     output:
-        zip   = protected(report_dir + "{sample}.raw_fastqc.zip"),
-        html  = protected(report_dir + "{sample}.raw_fastqc.html")
+        zip   = protected(report_dir + "{sample}.from_sff.raw_fastqc.zip"),
+        html  = protected(report_dir + "{sample}.from_sff.raw_fastqc.html")
     threads:
         1
     params:
         outdir = report_dir
     log:
-        report_doc + "fastqc_pyrobayes_{sample}.log"
+        report_doc + "fastqc_pyrobayes_from_sff_{sample}.log"
     benchmark:
-        report_doc + "fastqc_pyrobayes_{sample}.log"
+        report_doc + "fastqc_pyrobayes_from_sff_{sample}.log"
     shell:
         "fastqc "
             "--nogroup "
@@ -24,23 +24,23 @@ rule report_fastqc_sff_sample:
 
 
 
-rule report_fastqc_pyrobayes_sample:
+rule report_fastqc_pyrobayes_from_sff_sample:
     """
     Run fastqc over corrected reads with pyrobayes
     """
     input:
-        fastq = qc_dir + "{sample}.pyrobayes.fq.gz"
+        fastq = qc_dir + "{sample}.from_sff.pyrobayes.fq.gz"
     output:
-        zip   = protected(report_dir + "{sample}.pyrobayes_fastqc.zip"),
-        html  = protected(report_dir + "{sample}.pyrobayes_fastqc.html")
+        zip   = protected(report_dir + "{sample}.from_sff.pyrobayes_fastqc.zip"),
+        html  = protected(report_dir + "{sample}.from_sff.pyrobayes_fastqc.html")
     threads:
         1
     params:
         outdir = report_dir
     log:
-        report_doc + "fastqc_pyrobayes_{sample}.log"
+        report_doc + "fastqc_pyrobayes_from_sff_{sample}.log"
     benchmark:
-        report_doc + "fastqc_pyrobayes_{sample}.log"
+        report_doc + "fastqc_pyrobayes_from_sff_{sample}.log"
     shell:
         "fastqc "
             "--nogroup "
@@ -50,23 +50,23 @@ rule report_fastqc_pyrobayes_sample:
 
 
 
-rule report_fastqc_snowhite_sample:
+rule report_fastqc_snowhite_from_sff_sample:
     """
     Run fastqc over filtered reads with snowhite
     """
     input:
-        fastq = qc_dir + "{sample}.snowhite.fq.gz"
+        fastq = qc_dir + "{sample}.from_sff.snowhite.fq.gz"
     output:
-        zip   = protected(report_dir + "{sample}.snowhite_fastqc.zip"),
-        html  = protected(report_dir + "{sample}.snowhite_fastqc.html")
+        zip   = protected(report_dir + "{sample}.from_sff.snowhite_fastqc.zip"),
+        html  = protected(report_dir + "{sample}.from_sff.snowhite_fastqc.html")
     threads:
         1
     params:
         outdir = report_dir
     log:
-        report_doc + "fastqc_snowhite_{sample}.log"
+        report_doc + "fastqc_snowhite_from_sff_{sample}.log"
     benchmark:
-        report_doc + "fastqc_snowhite_{sample}.log"
+        report_doc + "fastqc_snowhite_from_sff_{sample}.log"
     shell:
         "fastqc "
             "--nogroup "
@@ -76,42 +76,136 @@ rule report_fastqc_snowhite_sample:
 
 
 
-rule report_multiqc_sample:
+rule report_multiqc_from_sff_sample:
     """
     Run multiqc over all the fastqc reports of sample
     """
     input:
-        raw_zip = report_dir + "{sample}.raw_fastqc.zip",
-        pyrobayes_zip = report_dir + "{sample}.pyrobayes_fastqc.zip",
-        snowhite_zip = report_dir + "{sample}.snowhite_fastqc.zip"
+        raw_zip = report_dir + "{sample}.from_sff.raw_fastqc.zip",
+        pyrobayes_zip = report_dir + "{sample}.from_sff.pyrobayes_fastqc.zip",
+        snowhite_zip = report_dir + "{sample}.from_sff.snowhite_fastqc.zip"
     output:
-        html = protected(report_dir + "multiqc_{sample}.html")
+        html = protected(report_dir + "multiqc_from_sff_{sample}.html")
     threads:
         1
     params:
-        txt = report_dir + "{sample}_fastqclist.txt",
+        fofn = report_dir + "{sample}_fastqclist.fofn",
         title = "\'MultiQC report for {sample}\'",
         template = config["software_params"]["multiqc"]["template"],
         data_format = config["software_params"]["multiqc"]["data_format"],
         additional_params = config["software_params"]["multiqc"]["additional_params"],
     log:
-        report_doc + "multiqc_{sample}.log"
+        report_doc + "multiqc_from_sff_{sample}.log"
     benchmark:
-        report_doc + "multiqc_{sample}.json"
+        report_doc + "multiqc_from_sff_{sample}.json"
     shell:
         "echo {input} | "
         "tr -s \" \" | "
         "tr \" \" \"\\n\" "
-        "> {params.txt} 2> {log} ; "
+        "> {params.fofn} 2> {log} ; "
         "multiqc "
             "--fullnames "
             "--title {params.title} "
             "--filename {output.html} "
             "--template {params.template} "
-            "--file-list {params.txt} "
+            "--file-list {params.fofn} "
             "--data-format {params.data_format} "
             "{params.additional_params} "
         "2>> {log} 1>&2 ; "
+
+
+
+################# FASTQ
+
+rule report_fastqc_raw_from_fastq_sample:
+    """
+    Run fastqc over original reads
+    """
+    input:
+        fastq = raw_dir + "{sample}.from_fastq.raw.fq.gz"
+    output:
+        zip   = protected(report_dir + "{sample}.from_fastq.raw_fastqc.zip"),
+        html  = protected(report_dir + "{sample}.from_fastq.raw_fastqc.html")
+    threads:
+        1
+    params:
+        outdir = report_dir
+    log:
+        report_doc + "fastqc_pyrobayes_from_fastq_{sample}.log"
+    benchmark:
+        report_doc + "fastqc_pyrobayes_from_fastq_{sample}.log"
+    shell:
+        "fastqc "
+            "--nogroup "
+            "--outdir {params.outdir} "
+            "{input.fastq} "
+        "> {log} 2>&1"
+
+
+
+rule report_fastqc_snowhite_from_fastq_sample:
+    """
+    Run fastqc over filtered reads with snowhite
+    """
+    input:
+        fastq = qc_dir + "{sample}.from_fastq.snowhite.fq.gz"
+    output:
+        zip   = protected(report_dir + "{sample}.from_fastq.snowhite_fastqc.zip"),
+        html  = protected(report_dir + "{sample}.from_fastq.snowhite_fastqc.html")
+    threads:
+        1
+    params:
+        outdir = report_dir
+    log:
+        report_doc + "fastqc_snowhite_from_fastq_{sample}.log"
+    benchmark:
+        report_doc + "fastqc_snowhite_from_fastq_{sample}.log"
+    shell:
+        "fastqc "
+            "--nogroup "
+            "--outdir {params.outdir} "
+            "{input.fastq} "
+        "> {log} 2>&1"
+
+
+
+rule report_multiqc_from_fastq_sample:
+    """
+    Run multiqc over all the fastqc reports of sample
+    """
+    input:
+        raw_zip = report_dir + "{sample}.from_fastq.raw_fastqc.zip",
+        snowhite_zip = report_dir + "{sample}.from_fastq.snowhite_fastqc.zip"
+    output:
+        html = protected(report_dir + "multiqc_from_fastq_{sample}.html")
+    threads:
+        1
+    params:
+        fofn = report_dir + "{sample}_fastqclist.fofn",
+        title = "\'MultiQC report for {sample}\'",
+        template = config["software_params"]["multiqc"]["template"],
+        data_format = config["software_params"]["multiqc"]["data_format"],
+        additional_params = config["software_params"]["multiqc"]["additional_params"],
+    log:
+        report_doc + "multiqc_from_fastq_{sample}.log"
+    benchmark:
+        report_doc + "multiqc_from_fastq_{sample}.json"
+    shell:
+        "echo {input} | "
+        "tr -s \" \" | "
+        "tr \" \" \"\\n\" "
+        "> {params.fofn} 2> {log} ; "
+        "multiqc "
+            "--fullnames "
+            "--title {params.title} "
+            "--filename {output.html} "
+            "--template {params.template} "
+            "--file-list {params.fofn} "
+            "--data-format {params.data_format} "
+            "{params.additional_params} "
+        "2>> {log} 1>&2 ; "
+
+##########################ALLL
 
 
 
@@ -121,24 +215,31 @@ rule multiqc_all:
     """
     input:
         expand(
-            report_dir + "{sample}.raw_fastqc.zip",
-            sample = config["samples"]
+            report_dir + "{sample}.from_sff.raw_fastqc.zip",
+            sample = SAMPLES_SFF
         ),
         expand(
-            report_dir + "{sample}.pyrobayes_fastqc.zip",
-            sample = config["samples"]
+            report_dir + "{sample}.from_sff.pyrobayes_fastqc.zip",
+            sample = SAMPLES_SFF
         ),
         expand(
-            report_dir + "{sample}.snowhite_fastqc.zip",
-            sample = config["samples"]
+            report_dir + "{sample}.from_sff.snowhite_fastqc.zip",
+            sample = SAMPLES_SFF
+        ),
+        expand(
+            report_dir + "{sample}.from_fastq.raw_fastqc.zip",
+            sample = SAMPLES_FASTQ
+        ),
+        expand(
+            report_dir + "{sample}.from_fastq.snowhite_fastqc.zip",
+            sample = SAMPLES_FASTQ
         )
     output:
         html= protected(report_dir + "multiqc.html"),
-
     threads:
         1
     params:
-        txt = report_dir + "all_fastqc.txt",
+        fofn = report_dir + "all_fastqc.fofn",
         title = "\'MultiQC report for all samples\'",
         template = config["software_params"]["multiqc"]["template"],
         data_format = config["software_params"]["multiqc"]["data_format"],
@@ -151,13 +252,132 @@ rule multiqc_all:
         "echo {input} | "
         "tr -s \" \" | "
         "tr \" \" \"\\n\" "
-        "> {params.txt} 2> {log} ; "
+        "> {params.fofn} 2> {log} ; "
         "multiqc "
             "--fullnames "
             "--title {params.title} "
             "--filename {output.html} "
             "--template {params.template} "
-            "--file-list {params.txt} "
+            "--file-list {params.fofn} "
+            "--data-format {params.data_format} "
+            "{params.additional_params} "
+        "2>> {log} 1>&2"
+
+
+
+rule report_multiqc_raw:
+    input:
+        expand(
+            report_dir + "{sample}.from_sff.raw_fastqc.zip",
+            sample = SAMPLES_SFF
+        ),
+        expand(
+            report_dir + "{sample}.from_fastq.raw_fastqc.zip",
+            sample = SAMPLES_FASTQ
+        )
+    output:
+        html= protected(report_dir + "multiqc_raw.html"),
+    threads:
+        1
+    params:
+        fofn = report_dir + "raw_fastqc.fofn",
+        title = "\'MultiQC report for raw samples\'",
+        template = config["software_params"]["multiqc"]["template"],
+        data_format = config["software_params"]["multiqc"]["data_format"],
+        additional_params = config["software_params"]["multiqc"]["additional_params"]
+    log:
+        report_doc + "multiqc_raw.log"
+    benchmark:
+        report_doc + "multiqc_raw.json"
+    shell:
+        "echo {input} | "
+        "tr -s \" \" | "
+        "tr \" \" \"\\n\" "
+        "> {params.fofn} 2> {log} ; "
+        "multiqc "
+            "--fullnames "
+            "--title {params.title} "
+            "--filename {output.html} "
+            "--template {params.template} "
+            "--file-list {params.fofn} "
+            "--data-format {params.data_format} "
+            "{params.additional_params} "
+        "2>> {log} 1>&2"
+
+
+
+rule report_multiqc_pyrobayes:
+    input:
+        expand(
+            report_dir + "{sample}.from_sff.pyrobayes_fastqc.zip",
+            sample = SAMPLES_SFF
+        )
+    output:
+        html= protected(report_dir + "multiqc_pyrobayes.html"),
+    threads:
+        1
+    params:
+        fofn = report_dir + "pyrobayes_fastqc.fofn",
+        title = "\'MultiQC report for samples called with Pyrobayes\'",
+        template = config["software_params"]["multiqc"]["template"],
+        data_format = config["software_params"]["multiqc"]["data_format"],
+        additional_params = config["software_params"]["multiqc"]["additional_params"]
+    log:
+        report_doc + "multiqc_pyrobayes.log"
+    benchmark:
+        report_doc + "multiqc_pyrobayes.json"
+    shell:
+        "echo {input} | "
+        "tr -s \" \" | "
+        "tr \" \" \"\\n\" "
+        "> {params.fofn} 2> {log} ; "
+        "multiqc "
+            "--fullnames "
+            "--title {params.title} "
+            "--filename {output.html} "
+            "--template {params.template} "
+            "--file-list {params.fofn} "
+            "--data-format {params.data_format} "
+            "{params.additional_params} "
+        "2>> {log} 1>&2"
+
+
+
+rule report_multiqc_snowhite:
+    input:
+        expand(
+            report_dir + "{sample}.from_sff.snowhite_fastqc.zip",
+            sample = SAMPLES_SFF
+        ),
+        expand(
+            report_dir + "{sample}.from_fastq.snowhite_fastqc.zip",
+            sample = SAMPLES_FASTQ
+        )
+    output:
+        html= protected(report_dir + "multiqc_snowhite.html"),
+    threads:
+        1
+    params:
+        fofn = report_dir + "snowhite_fastqc.fofn",
+        title = "\'MultiQC report for samples corrected with Snowhite\'",
+        template = config["software_params"]["multiqc"]["template"],
+        data_format = config["software_params"]["multiqc"]["data_format"],
+        additional_params = config["software_params"]["multiqc"]["additional_params"]
+    log:
+        report_doc + "multiqc_snowhite.log"
+    benchmark:
+        report_doc + "multiqc_snowhite.json"
+    shell:
+        "echo {input} | "
+        "tr -s \" \" | "
+        "tr \" \" \"\\n\" "
+        "> {params.fofn} 2> {log} ; "
+        "multiqc "
+            "--fullnames "
+            "--title {params.title} "
+            "--filename {output.html} "
+            "--template {params.template} "
+            "--file-list {params.fofn} "
             "--data-format {params.data_format} "
             "{params.additional_params} "
         "2>> {log} 1>&2"

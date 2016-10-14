@@ -4,15 +4,8 @@ samples_sff:
     sample2:
         sff: data/reads/221_FZUWXHW01.sff
 
-
-
 samples_fastq:
-    sample3:
-        fastq: data/reads/ERR047535.fastq.gz
-    sample4:
-        fastq: data/reads/ERR047541.fastq.gz
-
-
+    
 
 adaptors:
     "data/adaptors/adaptors.fa"
@@ -25,6 +18,9 @@ univec_url:
 software_params:
     pyrobayes:
         # None
+    trimmomatic:
+        "HEADCROP:12 MINLEN:39"
+        # Delete first 12 nt and remove reads that are now less than 39 nt
     seqclean:
         slice_size: 1000 #-n number of sequences taken at once in each search
         # slice (default 2000)

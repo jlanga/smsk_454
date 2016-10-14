@@ -1,32 +1,43 @@
-def fastq_gz_to_merge(wildcards):
+def merge_from_sff(wildcards):
     """
-    Make a list with all the fq.gz to assemble
+    Make a list with all the fq.gz that come from sff files to assemble
     """
-    return [qc_dir + sample + ".snowhite.fq.gz" for sample in config["samples"]]
+    return [qc_dir + sample + ".from_sff.snowhite.fq.gz" for sample in SAMPLES_SFF]
 
 
 
-rule assembly_merge_fastq:
+def merge_from_fastq(wildcards):
+    """
+    Make a list with all the fq.gz that come from fq.gz files to assemble
+    """
+    return [qc_dir + sample + ".from_fastq.snowhite.fq.gz" for sample in SAMPLES_FASTQ]
+
+
+
+rule assembly_merge:
     """
     Join all fastq.gz into a single fastq
     """
     input:
-        fastq_gz_to_merge
+        sff = merge_from_sff,
+        fastq = merge_from_fastq
     output:
         fastq = temp(assembly_dir + "merged.fq")
     threads:
         1
     log:
-        assembly_doc + "merge_fastq.log"
+        assembly_doc + "merge.log"
     benchmark:
-        assembly_doc + "merge_fastq.json"
+        assembly_doc + "merge.json"
     shell:
-        "gzip "
+        "pigz "
             "--decompress "
             "--stdout "
-            "{input} "
+            "{input.sff} "
+            "{input.fastq}"
         "> {output.fastq} "
         "2> {log}"
+
 
 
 
