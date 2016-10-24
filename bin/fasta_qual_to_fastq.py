@@ -4,10 +4,13 @@ from Bio import SeqIO
 from Bio.SeqIO.QualityIO import PairedFastaQualIterator
 import sys
 
-def convert(fasta, qual, fastq):
+def convert(fasta_file, qual_file, fastq_file):
+    """
+    Combine fasta_file and qual_file into fastq_file in PHRED33 qual format.
+    """
     SeqIO.write(
-        (record for record in PairedFastaQualIterator(fasta, qual)),
-        fastq,
+        (record for record in PairedFastaQualIterator(fasta_file, qual_file)),
+        fastq_file,
         "fastq"
     )
 

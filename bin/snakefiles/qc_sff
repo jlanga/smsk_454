@@ -87,6 +87,8 @@ rule qc_snowhite_from_sff_sample:
         delete_temporary_files= config["software_params"]["snowhite"]["delete_temporary_files"],
         output_fastq= config["software_params"]["snowhite"]["output_fastq"],
         split_in_subfiles= config["software_params"]["snowhite"]["split_in_subfiles"],
+        barcodes_in_end = config["software_params"]["snowhite"]["barcodes_in_end"],
+        number_of_mismatches = config["software_params"]["snowhite"]["number_of_mismatches"],
         minimum_quality= config["software_params"]["snowhite"]["minimum_quality"],
         end_clipping= config["software_params"]["snowhite"]["end_clipping"],
         bases_to_clip= config["software_params"]["snowhite"]["bases_to_clip"],
@@ -104,7 +106,7 @@ rule qc_snowhite_from_sff_sample:
         ns_as_a_or_t= config["software_params"]["snowhite"]["ns_as_a_or_t"],
         allow_wobble= config["software_params"]["snowhite"]["allow_wobble"],
     threads:
-        2 # Snowhite is mostly monothreaded
+        4 # Snowhite is mostly monothreaded
     log:
         qc_doc + "snowhite_from_sff_{sample}.log"
     benchmark:
@@ -118,11 +120,15 @@ rule qc_snowhite_from_sff_sample:
             "-f {input.fastq} "
             "-o {params.out_folder} "
             "-v {input.adaptors} "
+            "-s {input.adaptors} "
             "-m {params.minimum_sequence_length} "
             "-g {params.delete_temporary_files} "
             "-R {params.output_fastq} "
+            "`#-B {params.split_in_subfiles}` "
+            "`#-j {params.barcodes_in_end}` "
+            "`#-z {params.number_of_mismatches}` "
             "-Q {params.minimum_quality} "
-            "`#-E {params.end_clipping}` "
+            "`#-E {input.adaptors}` "
             "`#-c {params.bases_to_clip}` "
             "-D {params.execute_tagdust} "
             "-d {params.false_discovery_rate} "
