@@ -1,0 +1,16 @@
+dist: trusty
+
+language: bash
+
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y build-essential curl git wget
+  - source bin/activate
+  - bash bin/install/brew.sh
+  - bash bin/install/from_brew.sh
+  - bash bin/install/from_pip3.sh
+  - bash bin/install/from_tarball.sh
+
+script:
+  - bash scripts/download_test_data.sh
+  - snakemake -j 24

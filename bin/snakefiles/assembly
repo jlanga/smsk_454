@@ -46,7 +46,8 @@ rule assembly_newbler:
     Assemble with newbler
     """
     input:
-        fq = assembly_dir + "merged.fq"
+        fq = assembly_dir + "merged.fq",
+        adaptors = raw_dir + "adaptors.fa"
     output:
         fna = protected(assembly_dir + "454Isotigs.fna"),
         faa = protected(assembly_dir + "454Isotigs.faa")
@@ -70,6 +71,8 @@ rule assembly_newbler:
             "-mi {params.minimum_overlap_identity} "
             "-ml {params.minimum_overlap_length} "
             "-o {params.out_dir} "
+            "-vs {input.adaptors} "
+            "-vt {input.adaptors} "
             "{params.additional_params} "
             "{input.fq} "
         "2> {log} 1>&2"
