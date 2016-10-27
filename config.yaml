@@ -93,7 +93,7 @@ software_params:
         minimum_overlap_length: 50 # -ml 40 or -ml 90%. Flag to set the minimum
         # overlap length parameter, as either a minimum length in bases or a
         # percentage of read length.
-        additional_params: "-force -m -tr -noace" # put here other flags
+        additional_params: "-force -m -tr -noace -siom 30" # put here other flags
         # -force: overwrite output
         # -m: store reads in memory for fastest results
         # -tr: output trimmed reads
