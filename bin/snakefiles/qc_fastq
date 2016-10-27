@@ -31,7 +31,9 @@ rule qc_snowhite_from_fastq_sample:
         fastq= qc_dir + "{sample}.from_fastq.raw.fq",
         adaptors= raw_dir + "adaptors.fa"
     output:
-        fastq= temp(qc_dir + "{sample}.from_fastq.snowhite.fq")
+        fastq= temp(
+            qc_dir + "{sample}.from_fastq.snowhite.fq"
+        )
     params:
         tarball= "src/SnoWhite_2.0.3_release.tar.gz",
         out_folder = "out",

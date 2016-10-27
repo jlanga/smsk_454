@@ -38,8 +38,16 @@ rule all:
             sample = SAMPLES_FASTQ
         ),
         report_dir + "multiqc_raw.html",
-        [report_dir + "multiqc_pyrobayes.html"if len(SAMPLES_SFF) > 0 else []],
+        [report_dir + "multiqc_pyrobayes.html" if len(SAMPLES_SFF) > 0 else []],
         report_dir + "multiqc_snowhite.html",
         report_dir + "multiqc.html",
         assembly_dir + "454Isotigs.fna",
-        assembly_dir + "454Isotigs.faa"
+        assembly_dir + "454Isotigs.faa",
+        expand(
+            qc_dir + "{sample}.from_sff.snowhite.fq.gz",
+            sample = SAMPLES_SFF
+        ),
+        expand(
+            qc_dir + "{sample}.from_fastq.snowhite.fq.gz",
+            sample = SAMPLES_FASTQ
+        )
