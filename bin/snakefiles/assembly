@@ -4,11 +4,11 @@ rule assembly_newbler:
     """
     input:
         sff = expand(
-            qc_dir + "{sample}.from_sff.snowhite.fq",
+            qc_dir + "{sample}.from_sff.trimmomatic.fq",
             sample = SAMPLES_SFF
         ),
         fastq = expand(
-            qc_dir + "{sample}.from_fastq.snowhite.fq",
+            qc_dir + "{sample}.from_fastq.trimmomatic.fq",
             sample = SAMPLES_FASTQ
         ),
         adaptors = raw_dir + "adaptors.fa"
@@ -20,7 +20,7 @@ rule assembly_newbler:
         minimum_sequence_length = config["software_params"]["gsAssembler"]["minimum_sequence_length"],
         minimum_overlap_identity = config["software_params"]["gsAssembler"]["minimum_overlap_identity"],
         minimum_overlap_length = config["software_params"]["gsAssembler"]["minimum_overlap_length"],
-        additional_params= config["software_params"]["gsAssembler"]["additional_params"]
+        additional_params = config["software_params"]["gsAssembler"]["additional_params"]
     threads:
         24
     log:

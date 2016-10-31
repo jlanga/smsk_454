@@ -79,9 +79,7 @@ rule qc_snowhite_from_sff_sample:
         fastq= qc_dir + "{sample}.from_sff.pyrobayes.fq",
         adaptors= raw_dir + "adaptors.fa"
     output:
-        fastq = temp(
-            qc_dir + "{sample}.from_sff.snowhite.fq"
-        )
+        fastq = temp(qc_dir + "{sample}.from_sff.snowhite.fq")
     params:
         tarball= "src/SnoWhite_2.0.3_release.tar.gz",
         out_folder = "out",
@@ -162,7 +160,7 @@ rule qc_compress_from_sff_sample:
     input:
         fq = qc_dir + "{sample}.from_sff.snowhite.fq"
     output:
-        fq_gz = protected(qc_dir + "{sample}.from_sff.snowhite.fq.gz")
+        fq_gz = qc_dir + "{sample}.from_sff.snowhite.fq.gz"
     threads:
         1 # Just do it even though pigz uses all threads
     log:
@@ -170,4 +168,61 @@ rule qc_compress_from_sff_sample:
     benchmark:
         qc_doc + "compress_from_sff_{sample}.json"
     shell:
-        "pigz --best --stdout {input.fq} > {output.fq_gz} 2> {log}"
+        "pigz "
+            "--best "
+            "--stdout "
+            "{input.fq} "
+        "> {output.fq_gz} "
+        "2> {log}"
+
+
+
+rule qc_trimmomatic_from_sff_sample:
+    """
+    Perform a last trimming step with trimmomatic in SE mode
+    """
+    input:
+        fq_gz = qc_dir + "{sample}.from_sff.snowhite.fq.gz"
+    output:
+        fq_gz = protected(qc_dir + "{sample}.from_sff.trimmomatic.fq.gz")
+    threads:
+        64
+    params:
+        trimmomatic_params = config["software_params"]["trimmomatic"]["params"]
+    log:
+        qc_dir + "trimmomatic_from_sff_{sample}.log"
+    benchmark:
+        qc_dir + "trimmomatic_from_sff_{sample}.json"
+    shell:
+        "trimmomatic SE "
+            "-threads {threads} "
+            "-phred33 "
+            "<(pigz -dc {input.fq_gz}) "
+            ">(cut -f 1 -d \" \" | pigz --best > {output.fq_gz}) "
+            "{params.trimmomatic_params} "
+        "2> {log}"
+
+
+
+rule qc_decompress_trimmomatic_from_sff_sample:
+    """
+    Decompress trimmomatic output files for gsAssembler
+    """
+    input:
+        fq_gz = qc_dir + "{sample}.from_sff.trimmomatic.fq.gz"
+    output:
+        fq = temp(qc_dir + "{sample}.from_sff.trimmomatic.fq")
+    threads:
+        1
+    log:
+        qc_dir + "decompress_trimmomatic_from_sff_{sample}.log"
+    benchmark:
+        qc_dir + "decompress_trimmomatic_from_sff_{sample}.json"
+    shell:
+        "pigz "
+            "--decompress "
+            "--keep "
+            "--stdout "
+            "{input.fq_gz} "
+        "> {output.fq} "
+        "2> {log}"

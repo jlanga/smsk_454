@@ -80,6 +80,9 @@ software_params:
         # -n: <T/F> interpret Ns within A/T repeats as As or Ts (default = T)
         allow_wobble: T
         # -w: <T/F> allow wobble: i.e. ignore single alternative bases within A/T repeats (default = T)
+    trimmomatic:
+        params:
+            "LEADING:20 TRAILING:20 AVGQUAL:30 MINLEN:50 TOPHRED33"
     gsAssembler:
         minimum_sequence_length: 40 # -minlen 20. Flag to set the minimum read
         # length used in assembly and mapping computations. Reads of this
@@ -98,6 +101,7 @@ software_params:
         # -m: store reads in memory for fastest results
         # -tr: output trimmed reads
         # -noace: disable ace output
+        # -siom 30: serial i/o in memory. Max RAM to use: 30 Gb 
     multiqc:
         template: default # simple default_dev geo default
         data_format: tsv # tsv yaml json
