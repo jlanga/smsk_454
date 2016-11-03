@@ -1,11 +1,11 @@
 raw_dir = "results/raw/"
-raw_doc = "doc/raw/"
+raw_log = raw_dir + "log/"
 
 qc_dir = "results/qc/"
-qc_doc = "doc/qc/"
+qc_log = qc_dir + "log/"
 
 assembly_dir = "results/assembly/"
-assembly_doc = "doc/assembly/"
+assembly_log = assembly_dir + "log/"
 
 report_dir = "results/report/"
-report_doc = "doc/report/"
+report_log = report_dir + "log/"

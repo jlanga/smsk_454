@@ -1,52 +1,16 @@
-def merge_from_sff(wildcards):
-    """
-    Make a list with all the fq.gz that come from sff files to assemble
-    """
-    return [qc_dir + sample + ".from_sff.snowhite.fq.gz" for sample in SAMPLES_SFF]
-
-
-
-def merge_from_fastq(wildcards):
-    """
-    Make a list with all the fq.gz that come from fq.gz files to assemble
-    """
-    return [qc_dir + sample + ".from_fastq.snowhite.fq.gz" for sample in SAMPLES_FASTQ]
-
-
-
-rule assembly_merge:
-    """
-    Join all fastq.gz into a single fastq
-    """
-    input:
-        sff = merge_from_sff,
-        fastq = merge_from_fastq
-    output:
-        fastq = temp(assembly_dir + "merged.fq")
-    threads:
-        1
-    log:
-        assembly_doc + "merge.log"
-    benchmark:
-        assembly_doc + "merge.json"
-    shell:
-        "pigz "
-            "--decompress "
-            "--stdout "
-            "{input.sff} "
-            "{input.fastq}"
-        "> {output.fastq} "
-        "2> {log}"
-
-
-
-
 rule assembly_newbler:
     """
     Assemble with newbler
     """
     input:
-        fq = assembly_dir + "merged.fq",
+        sff = expand(
+            qc_dir + "{sample}.from_sff.trimmomatic.fq",
+            sample = SAMPLES_SFF
+        ),
+        fastq = expand(
+            qc_dir + "{sample}.from_fastq.trimmomatic.fq",
+            sample = SAMPLES_FASTQ
+        ),
         adaptors = raw_dir + "adaptors.fa"
     output:
         fna = protected(assembly_dir + "454Isotigs.fna"),
@@ -56,13 +20,13 @@ rule assembly_newbler:
         minimum_sequence_length = config["software_params"]["gsAssembler"]["minimum_sequence_length"],
         minimum_overlap_identity = config["software_params"]["gsAssembler"]["minimum_overlap_identity"],
         minimum_overlap_length = config["software_params"]["gsAssembler"]["minimum_overlap_length"],
-        additional_params= config["software_params"]["gsAssembler"]["additional_params"]
+        additional_params = config["software_params"]["gsAssembler"]["additional_params"]
     threads:
         24
     log:
-        assembly_doc + "newbler.log"
+        assembly_log + "newbler.log"
     benchmark:
-        assembly_doc + "newbler.json"
+        assembly_log + "newbler.json"
     shell:
         "./src/454/bin/runAssembly "
             "-cdna "
@@ -74,5 +38,6 @@ rule assembly_newbler:
             "-vs {input.adaptors} "
             "-vt {input.adaptors} "
             "{params.additional_params} "
-            "{input.fq} "
+            "{input.sff} "
+            "{input.fastq} "
         "2> {log} 1>&2"

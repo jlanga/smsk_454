@@ -1,5 +1,4 @@
-
-rule qc_decompress_from_fastq_sample:
+rule qc_sample_from_fastq_decompress:
     """
     Decompress fastq.gz for snowhite (fastq files)
     """
@@ -10,9 +9,9 @@ rule qc_decompress_from_fastq_sample:
     threads:
         1
     log:
-        qc_doc + "decompress_pyrobayes_fq_{sample}.log"
+        qc_log + "{sample}.from_fastq.decompress.log"
     benchmark:
-        qc_doc + "decompress_pyrobayes_fq_{sample}.json"
+        qc_log + "{sample}.from_fastq.decompress.json"
     shell:
         "pigz "
             "--decompress "
@@ -31,7 +30,8 @@ rule qc_snowhite_from_fastq_sample:
         fastq= qc_dir + "{sample}.from_fastq.raw.fq",
         adaptors= raw_dir + "adaptors.fa"
     output:
-        fastq= temp(qc_dir + "{sample}.from_fastq.snowhite.fq")
+        fastq = temp(qc_dir + "{sample}.from_fastq.snowhite.fq"),
+        fastq_gz= qc_dir + "{sample}.from_fastq.snowhite.fq.gz"
     params:
         tarball= "src/SnoWhite_2.0.3_release.tar.gz",
         out_folder = "out",
@@ -60,13 +60,17 @@ rule qc_snowhite_from_fastq_sample:
     threads:
         4 # Snowhite is mostly monothreaded
     log:
-        qc_doc + "snowhite_from_fastq_{sample}.log"
+        qc_log + "{sample}.from_fastq.snowhite.log"
     benchmark:
-        qc_doc + "snowhite_from_fastq_{sample}.json"
+        qc_log + "{sample}.from_fastq.snowhite.json"
     shadow:
         "shallow"
     shell:
-        "tar xvf {params.tarball} -C . 2> {log} 1>&2 ; "
+        "tar "
+            "xvf "
+            "{params.tarball} "
+            "-C . "
+        "2> {log} 1>&2 ; "
         "mv SnoWhite_2.0.3_release/* . ; "
         "yes | perl snowhite_2.0.3.pl "
             "-f {input.fastq} "
@@ -96,28 +100,85 @@ rule qc_snowhite_from_fastq_sample:
             "-k {params.keep_longer_end} "
             "-n {params.ns_as_a_or_t} "
             "-w {params.allow_wobble} "
-        "2>> {log} 1>&2 || "
+        "2>> {log} 1>&2 || true ; " #Snowhite returns exit status different from 0 even after success
         "mv "
             "out/FinalOutput/out.clean "
             "{output.fastq} "
-        "2>> {log} 1>&2 || "
-        "true #Snowhite returns exit status different from 0 even after success ; "
+        "2>> {log} 1>&2 ; "
+        "pigz "
+            "--best "
+            "--stdout "
+            "{output.fastq} "
+        "> {output.fastq_gz} "
+        "2>> {log}"
 
 
 
-rule qc_compress_from_fastq_sample:
+# rule qc_sample_from_fastq_compress:
+#     """
+#     Compress snowhite's results (from fastq raw files).
+#     """
+#     input:
+#         fq = qc_dir + "{sample}.from_fastq.snowhite.fq"
+#     output:
+#         fq_gz = qc_dir + "{sample}.from_fastq.snowhite.fq.gz"
+#     threads:
+#         1 # Just do it even though pigz uses all threads
+#     log:
+#         qc_log + "{sample}.from_fastq.compress.log"
+#     benchmark:
+#         qc_log + "{sample}.from_fastq.compress.json"
+#     shell:
+#         "pigz --best --stdout {input.fq} > {output.fq_gz} 2> {log}"
+
+
+
+rule qc_sample_from_fastq_trimmomatic:
     """
-    Compress snowhite's results (from fastq raw files).
+    Perform a last trimming step with trimmomatic in SE mode
     """
     input:
-        fq = qc_dir + "{sample}.from_fastq.snowhite.fq"
+        fq_gz = qc_dir + "{sample}.from_fastq.snowhite.fq.gz"
     output:
-        fq_gz = protected(qc_dir + "{sample}.from_fastq.snowhite.fq.gz")
+        fq_gz = qc_dir + "{sample}.from_fastq.trimmomatic.fq.gz"
     threads:
-        1 # Just do it even though pigz uses all threads
+        64
+    params:
+        trimmomatic_params = config["software_params"]["trimmomatic"]["params"]
     log:
-        qc_doc + "compress_from_fastq_{sample}.log"
+        qc_log + "{sample}.from_fastq.trimmomatic.log"
     benchmark:
-        qc_doc + "compress_from_fastq_{sample}.json"
+        qc_log + "{sample}.from_fastq.trimmomatic.json"
     shell:
-        "pigz --best --stdout {input.fq} > {output.fq_gz} 2> {log}"
+        "trimmomatic SE "
+            "-threads {threads} "
+            "-phred33 "
+            "<(pigz -dc {input.fq_gz}) "
+            ">(cut -f 1 -d \" \" | pigz -9 > {output.fq_gz}) "
+            "{params.trimmomatic_params} "
+        "2> {log}"
+
+
+
+rule qc_sample_from_fastq_decompress_trimmomatic:
+    """
+    Decompress trimmomatic output files for gsAssembler
+    """
+    input:
+        fq_gz = qc_dir + "{sample}.from_fastq.trimmomatic.fq.gz"
+    output:
+        fq = temp(qc_dir + "{sample}.from_fastq.trimmomatic.fq")
+    threads:
+        1
+    log:
+        qc_log + "{sample}.from_fastq.decompress_trimmomatic.log"
+    benchmark:
+        qc_log + "{sample}.from_fastq.decompress_trimmomatic.json"
+    shell:
+        "pigz "
+            "--decompress "
+            #"--keep "
+            "--stdout "
+            "{input.fq_gz} "
+        "> {output.fq} "
+        "2> {log}"

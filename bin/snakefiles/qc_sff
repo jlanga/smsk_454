@@ -1,4 +1,4 @@
-rule qc_pyrobayes_sample:
+rule qc_sample_sff_pyrobayes:
     """
     Perform base calling with Pyrobayes
     """
@@ -10,9 +10,9 @@ rule qc_pyrobayes_sample:
     params:
         stub  = qc_dir + "{sample}.from_sff.pyrobayes",
     log:
-        qc_doc + "pyrobayes_{sample}.log"
+        qc_log + "{sample}.from_sff.pyrobayes.log"
     benchmark:
-        qc_doc + "pyrobayes_{sample}.json"
+        qc_log + "{sample}.from_sff.pyrobayes.json"
     threads:
         1
     shell:
@@ -23,7 +23,7 @@ rule qc_pyrobayes_sample:
 
 
 
-rule qc_join_fasta_qual_sample:
+rule qc_sample_from_sff_join_fasta_qual:
     """
     Join fasta and qual files into a fastq.gz
     """
@@ -31,13 +31,13 @@ rule qc_join_fasta_qual_sample:
         fasta = qc_dir + "{sample}.from_sff.pyrobayes.fasta",
         qual  = qc_dir + "{sample}.from_sff.pyrobayes.fasta.qual"
     output:
-        fastq_gz = protected(qc_dir + "{sample}.from_sff.pyrobayes.fq.gz")
+        fastq_gz = qc_dir + "{sample}.from_sff.pyrobayes.fq.gz"
     threads:
         4
     log:
-        qc_doc + "join_fasta_qual_{sample}.log"
+        qc_log + "{sample}.from_sff.join_fasta_qual.log"
     benchmark:
-        qc_doc + "join_fasta_qual_{sample}.json"
+        qc_log + "{sample}.from_sff.join_fasta_qual.json"
     shell:
         "( python3 bin/fasta_qual_to_fastq.py "
             "{input.fasta} "
@@ -47,7 +47,7 @@ rule qc_join_fasta_qual_sample:
 
 
 
-rule qc_decompress_pyrobayes_fq_sample:
+rule qc_sample_from_sff_decompress_pyrobayes:
     """
     Decompress fastq.gz from pyrobayes for snowhite (sff files)
     """
@@ -58,9 +58,9 @@ rule qc_decompress_pyrobayes_fq_sample:
     threads:
         1
     log:
-        qc_doc + "decompress_pyrobayes_fq_{sample}.log"
+        qc_log + "{sample}.from_sff.decompress_pyrobayes.log"
     benchmark:
-        qc_doc + "decompress_pyrobayes_fq_{sample}.json"
+        qc_log + "{sample}.from_sff.decompress_pyrobayes.json"
     shell:
         "pigz "
             "--decompress "
@@ -71,7 +71,7 @@ rule qc_decompress_pyrobayes_fq_sample:
 
 
 
-rule qc_snowhite_from_sff_sample:
+rule qc_sample_from_sff_snowhite:
     """
     Run Snowhite (for raw sff files)
     """
@@ -79,7 +79,8 @@ rule qc_snowhite_from_sff_sample:
         fastq= qc_dir + "{sample}.from_sff.pyrobayes.fq",
         adaptors= raw_dir + "adaptors.fa"
     output:
-        fastq= temp(qc_dir + "{sample}.from_sff.snowhite.fq")
+        fastq = temp(qc_dir + "{sample}.from_sff.snowhite.fq"),
+        fastq_gz = qc_dir+ "{sample}.from_sff.snowhite.fq.gz"
     params:
         tarball= "src/SnoWhite_2.0.3_release.tar.gz",
         out_folder = "out",
@@ -108,13 +109,17 @@ rule qc_snowhite_from_sff_sample:
     threads:
         4 # Snowhite is mostly monothreaded
     log:
-        qc_doc + "snowhite_from_sff_{sample}.log"
+        qc_log + "{sample}.from_sff.snowhite.log"
     benchmark:
-        qc_doc + "snowhite_from_sff_{sample}.json"
+        qc_log + "{sample}.from_sff.snowhite.json"
     shadow:
         "shallow"
     shell:
-        "tar xvf {params.tarball} -C . 2> {log} 1>&2 ; "
+        "tar "
+            "xvf "
+            "{params.tarball} "
+            "-C . "
+        "2> {log} 1>&2 ; "
         "mv SnoWhite_2.0.3_release/* . ; "
         "yes | perl snowhite_2.0.3.pl "
             "-f {input.fastq} "
@@ -144,28 +149,93 @@ rule qc_snowhite_from_sff_sample:
             "-k {params.keep_longer_end} "
             "-n {params.ns_as_a_or_t} "
             "-w {params.allow_wobble} "
-        "2>> {log} 1>&2 || "
+        "2>> {log} 1>&2 || true ; " #Snowhite returns exit status different from 0 even after success
         "mv "
             "out/FinalOutput/out.clean "
             "{output.fastq} "
-        "2>> {log} 1>&2 || "
-        "true #Snowhite returns exit status different from 0 even after success ; "
+        "2>> {log} 1>&2 ; "
+        "pigz "
+            "--best "
+            "--stdout "
+            "{output.fastq} "
+        "> {output.fastq_gz} "
+        "2>> {log}"
 
 
 
-rule qc_compress_from_sff_sample:
+
+# rule qc_sample_from_sff_compress:
+#     """
+#     Compress snowhite's results (from sff raw files).
+#     """
+#     input:
+#         fq = qc_dir + "{sample}.from_sff.snowhite.fq"
+#     output:
+#         fq_gz = qc_dir + "{sample}.from_sff.snowhite.fq.gz"
+#     threads:
+#         1 # Just do it even though pigz uses all threads
+#     log:
+#         qc_log + "{sample}.from_sff.compress.log"
+#     benchmark:
+#         qc_log + "{sample}.from_sff.compress.json"
+#     shell:
+#         "pigz "
+#             "--best "
+#             "--stdout "
+#             "{input.fq} "
+#         "> {output.fq_gz} "
+#         "2> {log}"
+
+
+
+rule qc_sample_from_sff_trimmomatic:
     """
-    Compress snowhite's results (from sff raw files).
+    Perform a last trimming step with trimmomatic in SE mode
     """
     input:
-        fq = qc_dir + "{sample}.from_sff.snowhite.fq"
+        fq_gz = qc_dir + "{sample}.from_sff.snowhite.fq.gz"
     output:
-        fq_gz = protected(qc_dir + "{sample}.from_sff.snowhite.fq.gz")
+        fq_gz = qc_dir + "{sample}.from_sff.trimmomatic.fq.gz"
     threads:
-        1 # Just do it even though pigz uses all threads
+        64  
+    params:
+        trimmomatic_params = config["software_params"]["trimmomatic"]["params"]
     log:
-        qc_doc + "compress_from_sff_{sample}.log"
+        qc_log + "{sample}.from_sff.trimmomatic.log"
     benchmark:
-        qc_doc + "compress_from_sff_{sample}.json"
+        qc_log + "{sample}.from_sff.trimmomatic.json"
     shell:
-        "pigz --best --stdout {input.fq} > {output.fq_gz} 2> {log}"
+        "trimmomatic SE "
+            "-threads {threads} "
+            "-phred33 "
+            "<(pigz -dc {input.fq_gz}) "
+            ">(cut -f 1 -d \" \" | pigz -9 > {output.fq_gz}) "
+            "{params.trimmomatic_params} "
+        "2> {log} ; "
+        "sleep 5s"
+
+
+
+rule qc_sample_from_sff_decompress_trimmomatic:
+    """
+    Decompress trimmomatic output files for gsAssembler
+    """
+    input:
+        fq_gz = qc_dir + "{sample}.from_sff.trimmomatic.fq.gz"
+    output:
+        fq = temp(qc_dir + "{sample}.from_sff.trimmomatic.fq")
+    threads:
+        1
+    log:
+        qc_log + "{sample}.from_sff.decompress_trimmomatic.log"
+    benchmark:
+        qc_log + "{sample}.from_sff.decompress_trimmomatic.json"
+    shell:
+        "sleep 5s ; "
+        "pigz "
+            "--decompress "
+            #"--keep "
+            "--stdout "
+            "{input.fq_gz} "
+        "> {output.fq} "
+        "2> {log}"

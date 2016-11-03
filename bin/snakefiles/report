@@ -1,20 +1,20 @@
-rule report_fastqc_raw_from_sff_sample:
+rule report_sample_from_sff_raw_fastqc:
     """
     Run fastqc over original reads
     """
     input:
         fastq = raw_dir + "{sample}.from_sff.raw.fq.gz"
     output:
-        zip   = protected(report_dir + "{sample}.from_sff.raw_fastqc.zip"),
-        html  = protected(report_dir + "{sample}.from_sff.raw_fastqc.html")
+        zip   = report_dir + "{sample}.from_sff.raw_fastqc.zip",
+        html  = report_dir + "{sample}.from_sff.raw_fastqc.html"
     threads:
         1
     params:
         outdir = report_dir
     log:
-        report_doc + "fastqc_pyrobayes_from_sff_{sample}.log"
+        report_log + "{sample}.from_sff.raw_fastqc.log"
     benchmark:
-        report_doc + "fastqc_pyrobayes_from_sff_{sample}.log"
+        report_log + "{sample}.from_sff.raw_fastqc.json"
     shell:
         "fastqc "
             "--nogroup "
@@ -24,23 +24,23 @@ rule report_fastqc_raw_from_sff_sample:
 
 
 
-rule report_fastqc_pyrobayes_from_sff_sample:
+rule report_sample_from_sff_pyrobayes_fastqc:
     """
     Run fastqc over corrected reads with pyrobayes
     """
     input:
         fastq = qc_dir + "{sample}.from_sff.pyrobayes.fq.gz"
     output:
-        zip   = protected(report_dir + "{sample}.from_sff.pyrobayes_fastqc.zip"),
-        html  = protected(report_dir + "{sample}.from_sff.pyrobayes_fastqc.html")
+        zip   = report_dir + "{sample}.from_sff.pyrobayes_fastqc.zip",
+        html  = report_dir + "{sample}.from_sff.pyrobayes_fastqc.html"
     threads:
         1
     params:
         outdir = report_dir
     log:
-        report_doc + "fastqc_pyrobayes_from_sff_{sample}.log"
+        report_log + "{sample}.from_sff.pyrobayes_fastqc.log"
     benchmark:
-        report_doc + "fastqc_pyrobayes_from_sff_{sample}.log"
+        report_log + "{sample}.from_sff.pyrobayes_fastqc.json"
     shell:
         "fastqc "
             "--nogroup "
@@ -50,23 +50,23 @@ rule report_fastqc_pyrobayes_from_sff_sample:
 
 
 
-rule report_fastqc_snowhite_from_sff_sample:
+rule report_sample_from_sff_snowhite_fastqc:
     """
     Run fastqc over filtered reads with snowhite
     """
     input:
         fastq = qc_dir + "{sample}.from_sff.snowhite.fq.gz"
     output:
-        zip   = protected(report_dir + "{sample}.from_sff.snowhite_fastqc.zip"),
-        html  = protected(report_dir + "{sample}.from_sff.snowhite_fastqc.html")
+        zip   = report_dir + "{sample}.from_sff.snowhite_fastqc.zip",
+        html  = report_dir + "{sample}.from_sff.snowhite_fastqc.html"
     threads:
         1
     params:
         outdir = report_dir
     log:
-        report_doc + "fastqc_snowhite_from_sff_{sample}.log"
+        report_log + "{sample}.from_sff.snowhite_fastqc.log"
     benchmark:
-        report_doc + "fastqc_snowhite_from_sff_{sample}.log"
+        report_log + "{sample}.from_sff.snowhite_fastqc.json"
     shell:
         "fastqc "
             "--nogroup "
@@ -76,28 +76,55 @@ rule report_fastqc_snowhite_from_sff_sample:
 
 
 
-rule report_multiqc_from_sff_sample:
+rule report_fastqc_trimmomatic_from_sff_sample:
+    """
+    Run fastqc over filtered reads with trimmomatic
+    """
+    input:
+        fastq = qc_dir + "{sample}.from_sff.trimmomatic.fq.gz"
+    output:
+        zip   = report_dir + "{sample}.from_sff.trimmomatic_fastqc.zip",
+        html  = report_dir + "{sample}.from_sff.trimmomatic_fastqc.html"
+    threads:
+        1
+    params:
+        outdir = report_dir
+    log:
+        report_log + "{sample}.from_sff.trimmomatic_fastqc.log"
+    benchmark:
+        report_log + "{sample}.from_sff.trimmomatic_fastqc.json"
+    shell:
+        "fastqc "
+            "--nogroup "
+            "--outdir {params.outdir} "
+            "{input.fastq} "
+        "> {log} 2>&1"
+
+
+
+rule report_sample_from_sff_multiqc:
     """
     Run multiqc over all the fastqc reports of sample
     """
     input:
         raw_zip = report_dir + "{sample}.from_sff.raw_fastqc.zip",
         pyrobayes_zip = report_dir + "{sample}.from_sff.pyrobayes_fastqc.zip",
-        snowhite_zip = report_dir + "{sample}.from_sff.snowhite_fastqc.zip"
+        snowhite_zip = report_dir + "{sample}.from_sff.snowhite_fastqc.zip",
+        trimmomatic_zip = report_dir + "{sample}.from_sff.trimmomatic_fastqc.zip"
     output:
-        html = protected(report_dir + "multiqc_from_sff_{sample}.html")
+        html = report_dir + "{sample}.from_sff.multiqc.html"
     threads:
         1
     params:
-        fofn = report_dir + "{sample}_fastqclist.fofn",
+        fofn = report_dir + "{sample}.fastqclist.fofn",
         title = "\'MultiQC report for {sample}\'",
         template = config["software_params"]["multiqc"]["template"],
         data_format = config["software_params"]["multiqc"]["data_format"],
         additional_params = config["software_params"]["multiqc"]["additional_params"],
     log:
-        report_doc + "multiqc_from_sff_{sample}.log"
+        report_log + "{sample}.from_sff.multiqc.log"
     benchmark:
-        report_doc + "multiqc_from_sff_{sample}.json"
+        report_log + "{sample}.from_sff.multiqc.json"
     shell:
         "echo {input} | "
         "tr -s \" \" | "
@@ -117,23 +144,23 @@ rule report_multiqc_from_sff_sample:
 
 ################# FASTQ
 
-rule report_fastqc_raw_from_fastq_sample:
+rule report_sample_from_fastq_raw_fastqc:
     """
     Run fastqc over original reads
     """
     input:
         fastq = raw_dir + "{sample}.from_fastq.raw.fq.gz"
     output:
-        zip   = protected(report_dir + "{sample}.from_fastq.raw_fastqc.zip"),
-        html  = protected(report_dir + "{sample}.from_fastq.raw_fastqc.html")
+        zip   = report_dir + "{sample}.from_fastq.raw_fastqc.zip",
+        html  = report_dir + "{sample}.from_fastq.raw_fastqc.html"
     threads:
         1
     params:
         outdir = report_dir
     log:
-        report_doc + "fastqc_pyrobayes_from_fastq_{sample}.log"
+        report_log + "{sample}.from_fastq.raw_fastqc.log"
     benchmark:
-        report_doc + "fastqc_pyrobayes_from_fastq_{sample}.log"
+        report_log + "{sample}.from_fastq.raw_fastqc.json"
     shell:
         "fastqc "
             "--nogroup "
@@ -143,23 +170,23 @@ rule report_fastqc_raw_from_fastq_sample:
 
 
 
-rule report_fastqc_snowhite_from_fastq_sample:
+rule report_sample_from_fastq_snowhite_fastqc:
     """
     Run fastqc over filtered reads with snowhite
     """
     input:
         fastq = qc_dir + "{sample}.from_fastq.snowhite.fq.gz"
     output:
-        zip   = protected(report_dir + "{sample}.from_fastq.snowhite_fastqc.zip"),
-        html  = protected(report_dir + "{sample}.from_fastq.snowhite_fastqc.html")
+        zip   = report_dir + "{sample}.from_fastq.snowhite_fastqc.zip",
+        html  = report_dir + "{sample}.from_fastq.snowhite_fastqc.html"
     threads:
         1
     params:
         outdir = report_dir
     log:
-        report_doc + "fastqc_snowhite_from_fastq_{sample}.log"
+        report_log + "{sample}.from_fastq.snowhite_fastqc.log"
     benchmark:
-        report_doc + "fastqc_snowhite_from_fastq_{sample}.log"
+        report_log + "{sample}.from_fastq.snowhite_fastqc.json"
     shell:
         "fastqc "
             "--nogroup "
@@ -169,15 +196,42 @@ rule report_fastqc_snowhite_from_fastq_sample:
 
 
 
-rule report_multiqc_from_fastq_sample:
+rule report_sample_from_fastq_trimmomatic_fastqc:
+    """
+    Run fastqc over filtered reads with trimmomatic
+    """
+    input:
+        fastq = qc_dir + "{sample}.from_fastq.trimmomatic.fq.gz"
+    output:
+        zip   = report_dir + "{sample}.from_fastq.trimmomatic_fastqc.zip",
+        html  = report_dir + "{sample}.from_fastq.trimmomatic_fastqc.html"
+    threads:
+        1
+    params:
+        outdir = report_dir
+    log:
+        report_log + "{sample}.from_fastq.trimmomatic_fastqc.log"
+    benchmark:
+        report_log + "{sample}.from_fastq.trimmomatic_fastqc.log"
+    shell:
+        "fastqc "
+            "--nogroup "
+            "--outdir {params.outdir} "
+            "{input.fastq} "
+        "> {log} 2>&1"
+
+
+
+rule report_sample_from_fastq_multiqc:
     """
     Run multiqc over all the fastqc reports of sample
     """
     input:
         raw_zip = report_dir + "{sample}.from_fastq.raw_fastqc.zip",
-        snowhite_zip = report_dir + "{sample}.from_fastq.snowhite_fastqc.zip"
+        snowhite_zip = report_dir + "{sample}.from_fastq.snowhite_fastqc.zip",
+        trimmomatic_zip = report_dir + "{sample}.from_fastq.trimmomatic_fastqc.zip"
     output:
-        html = protected(report_dir + "multiqc_from_fastq_{sample}.html")
+        html = report_dir + "{sample}.from_fastq.multiqc.html"
     threads:
         1
     params:
@@ -187,9 +241,9 @@ rule report_multiqc_from_fastq_sample:
         data_format = config["software_params"]["multiqc"]["data_format"],
         additional_params = config["software_params"]["multiqc"]["additional_params"],
     log:
-        report_doc + "multiqc_from_fastq_{sample}.log"
+        report_log + "{sample}.from_fastq.multiqc.log"
     benchmark:
-        report_doc + "multiqc_from_fastq_{sample}.json"
+        report_log + "{sample}.from_fastq.multiqc.json"
     shell:
         "echo {input} | "
         "tr -s \" \" | "
@@ -205,11 +259,13 @@ rule report_multiqc_from_fastq_sample:
             "{params.additional_params} "
         "2>> {log} 1>&2 ; "
 
-##########################ALLL
+
+
+##########################AL
 
 
 
-rule multiqc_all:
+rule report_all_multiqc:
     """
     Run multiqc over all fastqc reports
     """
@@ -233,9 +289,13 @@ rule multiqc_all:
         expand(
             report_dir + "{sample}.from_fastq.snowhite_fastqc.zip",
             sample = SAMPLES_FASTQ
+        ),
+        expand(
+            report_dir + "{sample}.from_fastq.trimmomatic_fastqc.zip",
+            sample = SAMPLES_FASTQ
         )
     output:
-        html= protected(report_dir + "multiqc.html"),
+        html= report_dir + "all.multiqc.html",
     threads:
         1
     params:
@@ -245,9 +305,9 @@ rule multiqc_all:
         data_format = config["software_params"]["multiqc"]["data_format"],
         additional_params = config["software_params"]["multiqc"]["additional_params"]
     log:
-        report_doc + "multiqc_all.log"
+        report_log + "all.multiqc.log"
     benchmark:
-        report_doc + "multiqc_all.json"
+        report_log + "all.multiqc.json"
     shell:
         "echo {input} | "
         "tr -s \" \" | "
@@ -265,7 +325,7 @@ rule multiqc_all:
 
 
 
-rule report_multiqc_raw:
+rule report_raw_multiqc:
     input:
         expand(
             report_dir + "{sample}.from_sff.raw_fastqc.zip",
@@ -276,7 +336,7 @@ rule report_multiqc_raw:
             sample = SAMPLES_FASTQ
         )
     output:
-        html= protected(report_dir + "multiqc_raw.html"),
+        html= report_dir + "raw.multiqc.html",
     threads:
         1
     params:
@@ -286,9 +346,9 @@ rule report_multiqc_raw:
         data_format = config["software_params"]["multiqc"]["data_format"],
         additional_params = config["software_params"]["multiqc"]["additional_params"]
     log:
-        report_doc + "multiqc_raw.log"
+        report_log + "raw.multiqc.log"
     benchmark:
-        report_doc + "multiqc_raw.json"
+        report_log + "raw.multiqc.json"
     shell:
         "echo {input} | "
         "tr -s \" \" | "
@@ -306,14 +366,14 @@ rule report_multiqc_raw:
 
 
 
-rule report_multiqc_pyrobayes:
+rule report_pyrobayes_multiqc:
     input:
         expand(
             report_dir + "{sample}.from_sff.pyrobayes_fastqc.zip",
             sample = SAMPLES_SFF
         )
     output:
-        html= protected(report_dir + "multiqc_pyrobayes.html"),
+        html= report_dir + "pyrobayes.multiqc.html",
     threads:
         1
     params:
@@ -323,9 +383,9 @@ rule report_multiqc_pyrobayes:
         data_format = config["software_params"]["multiqc"]["data_format"],
         additional_params = config["software_params"]["multiqc"]["additional_params"]
     log:
-        report_doc + "multiqc_pyrobayes.log"
+        report_log + "pyrobayes.multiqc.log"
     benchmark:
-        report_doc + "multiqc_pyrobayes.json"
+        report_log + "pyrobayes.multiqc.json"
     shell:
         "echo {input} | "
         "tr -s \" \" | "
@@ -343,7 +403,7 @@ rule report_multiqc_pyrobayes:
 
 
 
-rule report_multiqc_snowhite:
+rule report_snowhite_multiqc:
     input:
         expand(
             report_dir + "{sample}.from_sff.snowhite_fastqc.zip",
@@ -354,19 +414,60 @@ rule report_multiqc_snowhite:
             sample = SAMPLES_FASTQ
         )
     output:
-        html= protected(report_dir + "multiqc_snowhite.html"),
+        html= report_dir + "snowhite.multiqc.html",
     threads:
         1
     params:
-        fofn = report_dir + "snowhite_fastqc.fofn",
+        fofn = report_dir + "snowhite.fastqc.fofn",
         title = "\'MultiQC report for samples corrected with Snowhite\'",
         template = config["software_params"]["multiqc"]["template"],
         data_format = config["software_params"]["multiqc"]["data_format"],
         additional_params = config["software_params"]["multiqc"]["additional_params"]
     log:
-        report_doc + "multiqc_snowhite.log"
+        report_log + "snowhite.multiqc.log"
     benchmark:
-        report_doc + "multiqc_snowhite.json"
+        report_log + "snowhite.multiqc.json"
+    shell:
+        "echo {input} | "
+        "tr -s \" \" | "
+        "tr \" \" \"\\n\" "
+        "> {params.fofn} 2> {log} ; "
+        "multiqc "
+            "--fullnames "
+            "--title {params.title} "
+            "--filename {output.html} "
+            "--template {params.template} "
+            "--file-list {params.fofn} "
+            "--data-format {params.data_format} "
+            "{params.additional_params} "
+        "2>> {log} 1>&2"
+
+
+
+rule report_trimmomatic_multiqc:
+    input:
+        expand(
+            report_dir + "{sample}.from_sff.trimmomatic_fastqc.zip",
+            sample = SAMPLES_SFF
+        ),
+        expand(
+            report_dir + "{sample}.from_fastq.trimmomatic_fastqc.zip",
+            sample = SAMPLES_FASTQ
+        )
+    output:
+        html= report_dir + "trimmomatic.multiqc.html",
+    threads:
+        1
+    params:
+        fofn = report_dir + "trimmomatic.fastqc.fofn",
+        title = "\'MultiQC report for samples corrected with trimmomatic\'",
+        template = config["software_params"]["multiqc"]["template"],
+        data_format = config["software_params"]["multiqc"]["data_format"],
+        additional_params = config["software_params"]["multiqc"]["additional_params"]
+    log:
+        report_log + "trimmomatic.multiqc.log"
+    benchmark:
+        report_log + "trimmomatic.multiqc.json"
     shell:
         "echo {input} | "
         "tr -s \" \" | "
