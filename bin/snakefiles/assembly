@@ -24,9 +24,9 @@ rule assembly_newbler:
     threads:
         24
     log:
-        assembly_doc + "newbler.log"
+        assembly_log + "newbler.log"
     benchmark:
-        assembly_doc + "newbler.json"
+        assembly_log + "newbler.json"
     shell:
         "./src/454/bin/runAssembly "
             "-cdna "

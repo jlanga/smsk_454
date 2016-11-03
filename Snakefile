@@ -11,12 +11,12 @@ snakefiles = "bin/snakefiles/"
 
 include: snakefiles + "folders"
 include: snakefiles + "clean"
-include: snakefiles + "generic"
 include: snakefiles + "raw"
 include: snakefiles + "qc_sff"
 include: snakefiles + "qc_fastq"
 include: snakefiles + "assembly"
 include: snakefiles + "report"
+include: snakefiles + "checkpoint"
 
 
 
@@ -31,18 +31,18 @@ rule all:
     """
     input:
         expand(
-            report_dir + "multiqc_from_sff_{sample}.html",
+            report_dir + "{sample}.from_sff.multiqc.html",
             sample = SAMPLES_SFF
         ),
         expand(
-            report_dir + "multiqc_from_fastq_{sample}.html",
+            report_dir + "{sample}.from_fastq.multiqc.html",
             sample = SAMPLES_FASTQ
         ),
-        report_dir + "multiqc_raw.html",
-        [report_dir + "multiqc_pyrobayes.html" if len(SAMPLES_SFF) > 0 else []],
-        report_dir + "multiqc_snowhite.html",
-        report_dir + "multiqc_trimmomatic.html",
-        report_dir + "multiqc.html",
+        report_dir + "raw.multiqc.html",
+        [report_dir + "pyrobayes.multiqc.html" if len(SAMPLES_SFF) > 0 else []],
+        report_dir + "snowhite.multiqc.html",
+        report_dir + "trimmomatic.multiqc.html",
+        report_dir + "all.multiqc.html",
         assembly_dir + "454Isotigs.fna",
         assembly_dir + "454Isotigs.faa",
         # expand(
