@@ -31,5 +31,6 @@ wget \
 
 unzip MAXIMUSv0.2.zip third_party/PyroBayes
 cp third_party/PyroBayes ../bin/
+chmod +x ../bin/PyroBayes
 
 popd
