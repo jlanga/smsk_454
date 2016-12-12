@@ -16,7 +16,7 @@ include: snakefiles + "qc_sff"
 include: snakefiles + "qc_fastq"
 include: snakefiles + "assembly"
 include: snakefiles + "report"
-include: snakefiles + "checkpoint"
+#include: snakefiles + "checkpoint"
 
 
 

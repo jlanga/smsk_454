@@ -16,7 +16,7 @@ rule qc_sample_sff_pyrobayes:
     threads:
         1
     shell:
-        "./src/UnifiedRelease/bin/PyroBayes "
+        "./bin/PyroBayes "
             "--sffFile {input.sff} "
             "--outStub {params.stub} "
         "2> {log} 1>&2"
