@@ -4,15 +4,11 @@ samples_sff:
     sample2:
         sff: data/reads/221_FZUWXHW01.sff
 
-
-
 samples_fastq:
     sample3:
         fastq: data/reads/ERR047535.fastq.gz
     sample4:
         fastq: data/reads/ERR047541.fastq.gz
-
-
 
 adaptors:
     "data/adaptors/adaptors.fa"
@@ -20,22 +16,11 @@ adaptors:
 univec_url:
     "ftp://ftp.ncbi.nlm.nih.gov/pub/UniVec/UniVec"
 
-
-
 software_params:
     pyrobayes:
         # None
-    seqclean:
-        slice_size: 1000 #-n number of sequences taken at once in each search
-        # slice (default 2000)
-        min_length: 40 #-l during cleaning, consider invalid the sequences
-        # shorter than <minlen> (default 100)
-        min_percent: 96 #-x minimum percent identity for an alignemnt with a
-        # contaminant (default 96)
-        min_length_vector: 11 #-y minimum length of a terminal vector hit to be
-        # considered (>11, default 11)
     snowhite:
-        minimum_sequence_length: 40
+        minimum_sequence_length: 50
         # -m: <integer> minimum sequence length for cleaned reads
         # (default = 50bp, APPLIES TO -Q,-E,-L,-Y STEPS, NOT to -B,-D,-R)
         delete_temporary_files: T
@@ -46,9 +31,9 @@ software_params:
         # -B: <integer/FILENAME> split file into set number of subfiles, or according to barcodes in FILENAME (default = no splitting)
         barcodes_in_end: 5
         # -j: <5/3> look for barcodes at 5' or 3' ends (default = 5)
-        number_of_mismatches: 1
+        number_of_mismatches: 2
         # -z: <integer> number of mismatches allowed when matching barcode (default = 0)
-        minimum_quality: 20
+        minimum_quality: 35
         # -Q: <integer> minimum phred score under which to trim 3' ends (default = no trimming; suggest = 10)
         end_clipping: B
         # -E: <5/3/B/FILENAME> clip at 5', 3', Both, or according to sequences in FILENAME (default = 5)
@@ -68,13 +53,13 @@ software_params:
         # -a: <3/5/B> poly A at 3', 5', or Both ends (default = 3)
         poly_t_ends: B
         # -t: <3/5/B> poly T at 3', 5', or Both ends (default = 5)
-        poly_tail_terminal_bases_cap: 0
+        poly_tail_terminal_bases_cap: 10
         # -b: <integer> number of terminal bases to look beyond for start of terminal poly A/T (default = 0)
-        poly_tail_minimum_repeat_length: 10
+        poly_tail_minimum_repeat_length: 2
         # -r: <integer> minimum length of A/T repeat inside of -b to consider as poly A/T (min = 2, default = 10)
         internal_poly_minimum_length: 15
         #-i: <integer> minimum length of internal poly A/T sequence to consider as poly A/T (default = 100bp, extreme case)
-        keep_longer_end: T
+        keep_longer_end: F
         # -k: <T/F> keep the longer end of sequence broken by a single internal polyA/T (default = F)
         ns_as_a_or_t: T
         # -n: <T/F> interpret Ns within A/T repeats as As or Ts (default = T)
@@ -84,19 +69,19 @@ software_params:
         params:
             "LEADING:20 TRAILING:20 AVGQUAL:30 MINLEN:50 TOPHRED33"
     gsAssembler:
-        minimum_sequence_length: 40 # -minlen 20. Flag to set the minimum read
+        minimum_sequence_length: 45 # -minlen 20. Flag to set the minimum read
         # length used in assembly and mapping computations. Reads of this
         # length will generally be classified as short tag reads, which are
         # treated separately from longer reads in computations (see Sections
         # 1.16.1.10 and 2.18.1.10).
-        minimum_overlap_identity: 90 # -mi 90. A value of 100 matches only
+        minimum_overlap_identity: 95 # -mi 90. A value of 100 matches only
         # identical sequences. Values below 50 may result in unpredictable
         # behavior, with very low values (i.e. 1) essentially matching all
         # reads.
         minimum_overlap_length: 50 # -ml 40 or -ml 90%. Flag to set the minimum
         # overlap length parameter, as either a minimum length in bases or a
         # percentage of read length.
-        additional_params: "-force -m -tr -noace -siom 30" # put here other flags
+        additional_params: "-force -m -tr -noace -siom 48" # put here other flags
         # -force: overwrite output
         # -m: store reads in memory for fastest results
         # -tr: output trimmed reads
